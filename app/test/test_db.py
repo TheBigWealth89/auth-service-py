@@ -23,7 +23,7 @@ async def test_insert_and_query():
             await session.refresh(user)      # refresh to get DB-assigned fields e.g., id
 
             # query
-            result = await session.execute(select(User).where(User.email == "wealth@example.com"))
+            result = await session.execute(select(User).where(User.email == "wealth1@example.com"))
             user_from_db = result.scalars().first()
             print("Loaded:", user_from_db.id, user_from_db.name, user_from_db.email)
 

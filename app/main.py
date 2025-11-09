@@ -1,17 +1,10 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from app.routes import auth_route
 
-app = FastAPI()
+app = FastAPI(
+    title="Auth Service",
+    version="1.0.0",
+    description="Learning Python with FastAPI and SOLID principles",
+)
 
-# Define a Pydantic model (like Zod schema)
-class User(BaseModel):
-    username: str
-    email: str
-
-@app.get("/")
-def read_root():
-    return {"message": "Hello from FastAPI 👋"}
-
-@app.post("/register")
-def register_user(user: User):
-    return {"user": user}
+app.include_router(auth_route.router, tags=["Auth"])
