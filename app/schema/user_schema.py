@@ -12,7 +12,12 @@ class UserCreateDTO(BaseModel):
     name: str = Field(..., min_length=1)
     email: EmailStr
     # plain for now, we'll hash before storing
-    password: str = Field(..., min_length=8) 
+    password: str = Field(..., min_length=8)
+
+
+class TokenDTO(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
 
 
 class UserReadDTO(BaseModel):
