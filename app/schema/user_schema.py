@@ -3,11 +3,16 @@ from typing import Optional
 from datetime import datetime
 
 
+class LoginDTO(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+
+
 class UserCreateDTO(BaseModel):
     name: str = Field(..., min_length=1)
     email: EmailStr
     # plain for now, we'll hash before storing
-    password: str = Field(..., min_length=8)
+    password: str = Field(..., min_length=8) 
 
 
 class UserReadDTO(BaseModel):

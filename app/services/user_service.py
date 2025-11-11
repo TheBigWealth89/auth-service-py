@@ -1,5 +1,6 @@
+from fastapi import HTTPException
 from ..repositories.user_repo_postgres import PostgresUserRepository
-from ..schema.user_schema import UserCreateDTO, UserReadDTO
+from ..schema.user_schema import LoginDTO, UserCreateDTO, UserReadDTO
 from ..services.abstract import PasswordHasher
 
 
@@ -26,3 +27,19 @@ class AuthService:
 
         # return safe DTO
         return UserReadDTO.model_validate(created)
+
+    async def login(self, dto: LoginDTO) -> UserCreateDTO:
+        email = dto.email.strip().lower()
+        user = await self._users.get_user_by_email(email)
+        # generic error to avoid leaking which part failed
+        credentials_error = HTTPException(
+            status_code=401, detail="Invalid credentials")
+
+        if user is None:
+            raise credentials_error
+
+         # user is an ORM instance; hashed password on attribute `hashed_password`
+        valid = await self._hasher.verify(user.hashed_password, dto.password)
+        if not valid:
+            raise credentials_error
+        return UserReadDTO.model_validate(user)
