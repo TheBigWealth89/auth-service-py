@@ -1,9 +1,8 @@
 from fastapi import HTTPException
 from ..repositories.user_repo_postgres import PostgresUserRepository
-from ..schema.user_schema import LoginDTO, UserCreateDTO, UserReadDTO
+from ..schema.user_schema import LoginDTO, UserCreateDTO, UserReadDTO, TokenDTO
 from ..services.abstract import PasswordHasher
-
-
+from ..core.token import create_access_token
 class AuthService:
     def __init__(self, user_repo: PostgresUserRepository, hasher: PasswordHasher):
         self._users = user_repo
@@ -28,7 +27,7 @@ class AuthService:
         # return safe DTO
         return UserReadDTO.model_validate(created)
 
-    async def login(self, dto: LoginDTO) -> UserCreateDTO:
+    async def login(self, dto: LoginDTO) -> TokenDTO:
         email = dto.email.strip().lower()
         user = await self._users.get_user_by_email(email)
         # generic error to avoid leaking which part failed
@@ -42,4 +41,6 @@ class AuthService:
         valid = await self._hasher.verify(user.hashed_password, dto.password)
         if not valid:
             raise credentials_error
-        return UserReadDTO.model_validate(user)
+         # create token subject = user id
+        access_token = create_access_token(sub=str(user.id))
+        return TokenDTO(access_token=access_token)
