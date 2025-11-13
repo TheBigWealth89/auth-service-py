@@ -2,7 +2,9 @@ from fastapi import HTTPException
 from ..repositories.user_repo_postgres import PostgresUserRepository
 from ..schema.user_schema import LoginDTO, UserCreateDTO, UserReadDTO, TokenDTO
 from ..services.abstract import PasswordHasher
-from ..core.token import create_access_token
+from ..core.token import create_access_token, create_refresh_token
+
+
 class AuthService:
     def __init__(self, user_repo: PostgresUserRepository, hasher: PasswordHasher):
         self._users = user_repo
@@ -43,4 +45,5 @@ class AuthService:
             raise credentials_error
          # create token subject = user id
         access_token = create_access_token(sub=str(user.id))
-        return TokenDTO(access_token=access_token)
+        refresh_token = create_refresh_token(sub=str(user.id))
+        return TokenDTO(access_token=access_token, refresh_token=refresh_token)

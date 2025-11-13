@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from ..core.db import AsyncSessionLocal
-from ..schema.user_schema import UserCreateDTO, LoginDTO, UserReadDTO, TokenDTO
+from ..schema.user_schema import UserCreateDTO, LoginDTO, TokenDTO
 from ..services.abstract import Argon2PasswordHasher, PasswordHasher
 from ..services.user_service import AuthService
 from ..repositories.user_repo_postgres import PostgresUserRepository
@@ -38,3 +38,12 @@ async def login(payload: LoginDTO,
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Internal error") from exc
+    
+@router.post("/auth/refresh")
+async def refresh_token(refresh_token: str):
+        payload = decode_token(refresh_token, refresh=True)
+        email = payload.get("sub")
+
+        new_access_token = create_access_token({"sub": id})
+        return {"access_token": new_access_token, "token_type": "bearer"}
+
