@@ -4,7 +4,7 @@ from ..schema.user_schema import UserCreateDTO, LoginDTO, TokenDTO
 from ..services.abstract import Argon2PasswordHasher, PasswordHasher
 from ..services.user_service import AuthService
 from ..repositories.user_repo_postgres import PostgresUserRepository
-
+from ..core.token import decode_token, create_access_token
 router = APIRouter()
 
 
@@ -42,7 +42,7 @@ async def login(payload: LoginDTO,
 @router.post("/auth/refresh")
 async def refresh_token(refresh_token: str):
         payload = decode_token(refresh_token, refresh=True)
-        email = payload.get("sub")
+        id = payload.get("sub")
 
         new_access_token = create_access_token({"sub": id})
         return {"access_token": new_access_token, "token_type": "bearer"}
