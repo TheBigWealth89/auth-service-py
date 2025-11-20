@@ -33,9 +33,6 @@ def upgrade() -> None:
             length=255), nullable=True),
     )
 
-    # Optional: remove the server_default if you don't want the DB to keep it:
-    # op.alter_column("users", "role", server_default=None)
-
 
 def downgrade() -> None:
     op.drop_column("users", "hashed_refresh_token")
