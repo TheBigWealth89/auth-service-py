@@ -43,7 +43,9 @@ class AuthService:
         valid = await self._hasher.verify(user.hashed_password, dto.password)
         if not valid:
             raise credentials_error
-         # create token subject = user id
-        access_token = create_access_token(sub=str(user.id))
+         # create access_token with the user's role and user id as subject
+        access_token = create_access_token(
+            sub=str(user.id), role=list([user.role]))
+        # Create refresh token with user id as subject
         refresh_token = create_refresh_token(sub=str(user.id))
         return TokenDTO(access_token=access_token, refresh_token=refresh_token)
