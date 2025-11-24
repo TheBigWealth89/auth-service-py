@@ -38,12 +38,16 @@ async def login(payload: LoginDTO,
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Internal error") from exc
-    
+
+
 @router.post("/auth/refresh")
-async def refresh_token(refresh_token: str):
-        payload = decode_token(refresh_token, refresh=True)
-        id = payload.get("sub")
-
-        new_access_token = create_access_token({"sub": id})
-        return {"access_token": new_access_token, "token_type": "bearer"}
-
+async def refresh(payload: dict, user_repo=Depends(get_user_repo), hasher=Depends(get_hasher)):
+    raw_token = payload.get("refresh_token")   # or read cookie
+    if not raw_token:
+        raise HTTPException(status_code=400, detail="refresh_token required")
+    svc = AuthService(user_repo, hasher)
+    try:
+        result = await svc.refresh_access_token(raw_token)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
