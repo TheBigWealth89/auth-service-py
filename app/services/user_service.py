@@ -36,6 +36,11 @@ class AuthService:
         return UserReadDTO.model_validate(created)
 
     async def login(self, dto: LoginDTO) -> TokenDTO:
+        """
+    Login user and return TokenDTO 
+    with access_token and refresh_token (raw)
+        """
+
         email = dto.email.strip().lower()
         user = await self._users.get_user_by_email(email)
         # generic error to avoid leaking which part failed
@@ -54,7 +59,6 @@ class AuthService:
         # create refresh token (opaque raw + store hash)
         refresh_token_raw, expires_at = await self._issue_refresh_token(user.id)
 
-        # Return TokenDTO (ensure TokenDTO has these fields)
         return TokenDTO(access_token=access_token, refresh_token_raw=refresh_token_raw, expires_at=expires_at)
 
     async def _issue_refresh_token(self, user_id: int):
@@ -73,7 +77,7 @@ class AuthService:
 
     async def refresh_access_token(self, raw_token: str):
         """
-        raw_token is the string the client sends back: "token_id.secret"
+        raw_token is the string the client sends back : "token_id.secret"
         Returns new access token and new refresh token (rotated).
         """
         try:

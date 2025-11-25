@@ -8,6 +8,10 @@ class LoginDTO(BaseModel):
     password: str = Field(..., min_length=8)
 
 
+class loginResponseDTO(BaseModel):
+    access_token: str
+
+
 class UserCreateDTO(BaseModel):
     name: str = Field(..., min_length=1)
     email: EmailStr
