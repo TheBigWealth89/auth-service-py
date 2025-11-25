@@ -1,12 +1,14 @@
 from fastapi import HTTPException
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from ..core.config import REFRESH_TOKEN_EXPIRE_DAYS
 from ..repositories.user_repo_postgres import PostgresUserRepository
 from ..schema.user_schema import LoginDTO, UserCreateDTO, UserReadDTO, TokenDTO
 from ..services.abstract import PasswordHasher
 from ..core.token import create_access_token
+
+now = datetime.now(timezone.utc)
 
 
 class AuthService:
@@ -49,7 +51,6 @@ class AuthService:
         # create access token (JWT)
         access_token = create_access_token(sub=str(user.id), role=list(
             [user.role]))
-
         # create refresh token (opaque raw + store hash)
         refresh_token_raw, expires_at = await self._issue_refresh_token(user.id)
 
@@ -84,7 +85,7 @@ class AuthService:
         if rt is None or rt.revoked:
             raise ValueError("Invalid or revoked refresh token")
 
-        if rt.expires_at < datetime.utcnow():
+        if rt.expires_at < now:
             # expired: revoke and reject
             await self._users.revoke_refresh_token(token_id)
             raise ValueError("Refresh token expired")

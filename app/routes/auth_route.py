@@ -4,7 +4,6 @@ from ..schema.user_schema import UserCreateDTO, LoginDTO, TokenDTO
 from ..services.abstract import Argon2PasswordHasher, PasswordHasher
 from ..services.user_service import AuthService
 from ..repositories.user_repo_postgres import PostgresUserRepository
-from ..core.token import decode_token, create_access_token
 router = APIRouter()
 
 
