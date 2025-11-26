@@ -46,7 +46,7 @@ class PostgresUserRepository(IUserRepository):
             return rt
 
     async def get_refresh_token_by_id(self, token_id: str):
-        async with self._session_factory() as session:  
+        async with self._session_factory() as session:
             return await session.get(RefreshToken, token_id)
 
     async def revoke_refresh_token(self, token_id: str):
@@ -55,3 +55,17 @@ class PostgresUserRepository(IUserRepository):
             if rt:
                 rt.revoked = True
                 await session.commit()
+
+    async def revoke_all_refresh_tokens_for_user(self, user_id: int):
+        async with self._session_factory() as session:
+            stmt = select(RefreshToken).where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.revoked == False
+            )
+            result = await session.execute(stmt)
+            tokens = result.scalars().all()
+
+            for t in tokens:
+                t.revoked = True
+
+            await session.commit()

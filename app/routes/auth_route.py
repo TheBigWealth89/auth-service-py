@@ -5,6 +5,7 @@ from ..schema.user_schema import UserCreateDTO, LoginDTO, loginResponseDTO
 from ..services.abstract import Argon2PasswordHasher, PasswordHasher
 from ..services.user_service import AuthService
 from ..repositories.user_repo_postgres import PostgresUserRepository
+from ..core.token import get_current_user_id
 router = APIRouter()
 
 
@@ -36,7 +37,7 @@ async def login(payload: LoginDTO,
     try:
         token = await svc.login(payload)
         access_token = token.access_token
-        refresh_token_raw = token.refresh_token_raw  
+        refresh_token_raw = token.refresh_token_raw
         # Set http-only cookie for refresh token
         response.set_cookie(
             key="refresh_token",
@@ -84,5 +85,26 @@ async def refresh(
 
         return {"access_token": new_access, "expires_at": expires_at}
 
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+
+@router.post("/auth/v1/logout")
+async def logout(
+    request: Request,
+        response: Response,
+        user_id: int = Depends(get_current_user_id),
+        user_repo=Depends(get_user_repo), hasher=Depends(get_hasher)):
+    raw_token = request.cookies.get("refresh_token")
+    if not raw_token:
+        raise HTTPException(status_code=400, detail="refresh_token required")
+    svc = AuthService(user_repo, hasher)
+    try:
+        await svc.logout(user_id)
+        # clear refresh token cookie
+        response.delete_cookie(
+            key="refresh_token",
+            path="/auth/v1/refresh",
+        )
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))

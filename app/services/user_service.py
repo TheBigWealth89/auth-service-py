@@ -60,6 +60,13 @@ class AuthService:
         refresh_token_raw, expires_at = await self._issue_refresh_token(user.id)
 
         return TokenDTO(access_token=access_token, refresh_token_raw=refresh_token_raw, expires_at=expires_at)
+    
+    async def logout(self, user_id: int):
+        """
+        Revoke all refresh tokens for the user.
+        """
+        await self._users.revoke_all_refresh_tokens_for_user(user_id)
+        
 
     async def _issue_refresh_token(self, user_id: int):
         token_id = uuid.uuid4().hex                   # stable id we can look up
