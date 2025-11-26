@@ -60,13 +60,12 @@ class AuthService:
         refresh_token_raw, expires_at = await self._issue_refresh_token(user.id)
 
         return TokenDTO(access_token=access_token, refresh_token_raw=refresh_token_raw, expires_at=expires_at)
-    
+
     async def logout(self, user_id: int):
         """
         Revoke all refresh tokens for the user.
         """
         await self._users.revoke_all_refresh_tokens_for_user(user_id)
-        
 
     async def _issue_refresh_token(self, user_id: int):
         token_id = uuid.uuid4().hex                   # stable id we can look up
@@ -84,7 +83,7 @@ class AuthService:
 
     async def refresh_access_token(self, raw_token: str):
         """
-        raw_token is the string the client sends back : "token_id.secret"
+        raw_token is the string the client sends back via HttpOnly cookie : "token_id.secret"
         Returns new access token and new refresh token (rotated).
         """
         try:
@@ -93,8 +92,22 @@ class AuthService:
             raise ValueError("Invalid token format")
 
         rt = await self._users.get_refresh_token_by_id(token_id)
-        if rt is None or rt.revoked:
-            raise ValueError("Invalid or revoked refresh token")
+        print("Refresh token from DB:", rt)
+
+        # Attempt to use a non-existent token
+        if rt is None:
+            await self._users.revoke_all_refresh_tokens_for_user(user_id=None)
+            raise ValueError("Suspicious activity detected")
+
+        # Attempt to use a revoked token
+        if rt.revoked:
+            await self._users.revoke_all_refresh_tokens_for_user(rt.user_id)
+            raise ValueError("Refresh token reuse detected")
+
+            # Invalid secret someone is guessing or replaying
+        if not await self._hasher.verify(rt.token_hash, secret):
+            await self._users.revoke_all_refresh_tokens_for_user(rt.user_id)
+            raise ValueError("Refresh token misuse detected")
 
         if rt.expires_at < now:
             # expired: revoke and reject

@@ -10,7 +10,7 @@ class LoginDTO(BaseModel):
 
 class loginResponseDTO(BaseModel):
     access_token: str
-
+    # refresh_token_raw:str
 
 class UserCreateDTO(BaseModel):
     name: str = Field(..., min_length=1)

@@ -38,6 +38,7 @@ async def login(payload: LoginDTO,
         token = await svc.login(payload)
         access_token = token.access_token
         refresh_token_raw = token.refresh_token_raw
+        print("refresh token raw", refresh_token_raw)
         # Set http-only cookie for refresh token
         response.set_cookie(
             key="refresh_token",
@@ -49,7 +50,7 @@ async def login(payload: LoginDTO,
             path="/auth/v1/refresh"   # cookie only sent to refresh endpoint
         )
 
-        return {"access_token": access_token, }
+        return {"access_token": access_token}
 
     except HTTPException:
         raise
@@ -91,13 +92,10 @@ async def refresh(
 
 @router.post("/auth/v1/logout")
 async def logout(
-    request: Request,
         response: Response,
         user_id: int = Depends(get_current_user_id),
         user_repo=Depends(get_user_repo), hasher=Depends(get_hasher)):
-    raw_token = request.cookies.get("refresh_token")
-    if not raw_token:
-        raise HTTPException(status_code=400, detail="refresh_token required")
+
     svc = AuthService(user_repo, hasher)
     try:
         await svc.logout(user_id)
@@ -106,5 +104,6 @@ async def logout(
             key="refresh_token",
             path="/auth/v1/refresh",
         )
+        return {"detail": "Logged out successfully"}
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
