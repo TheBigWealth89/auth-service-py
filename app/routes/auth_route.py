@@ -44,7 +44,7 @@ async def login(payload: LoginDTO,
             key="refresh_token",
             value=refresh_token_raw,
             httponly=True,
-            secure=True,              # required for HTTPS
+            secure=False,              # set to True in production with HTTPS
             samesite="none",          # required for cross-site apps
             max_age=60 * 60 * 24 * 7,  # 7 days
             path="/auth/v1/refresh"   # cookie only sent to refresh endpoint
@@ -78,7 +78,7 @@ async def refresh(
             key="refresh_token",
             value=new_raw,
             httponly=True,
-            secure=True,
+            secure=False,  # set to True in production with HTTPS
             samesite="none",
             max_age=60 * 60 * 24 * 7,
             path="/auth/v1/refresh"
