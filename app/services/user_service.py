@@ -84,7 +84,7 @@ class AuthService:
 
     async def refresh_access_token(self, raw_token: str):
         """
-        raw_token is the string the client sends back via HttpOnly cookie : "token_id.secret"
+        raw_token is the string the client sends back: "token_id.secret"
         Returns new access token and new refresh token (rotated).
         """
         try:
