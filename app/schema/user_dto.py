@@ -3,27 +3,11 @@ from typing import Optional
 from datetime import datetime
 
 
-class LoginDTO(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8)
-
-
-class loginResponseDTO(BaseModel):
-    access_token: str
-    # refresh_token_raw:str
-
 class UserCreateDTO(BaseModel):
     name: str = Field(..., min_length=1)
     email: EmailStr
     # plain for now, we'll hash before storing
     password: str = Field(..., min_length=8)
-
-
-class TokenDTO(BaseModel):
-    access_token: str
-    refresh_token_raw: str
-    expires_at: datetime
-    token_type: str = "bearer"
 
 
 class UserReadDTO(BaseModel):

@@ -6,8 +6,8 @@ session = requests.Session()
 
 #  Login → gets refresh_token #1
 login_res = session.post(f"{BASE}/auth/v1/login", json={
-    "email": "user1@example.com",
-    "password": "stringst1234"
+    "email": "user@example.com",
+    "password": "stringst"
 })
 print("Login cookies:", session.cookies.get_dict())
 

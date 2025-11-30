@@ -1,33 +1,5 @@
-from abc import ABC, abstractmethod
-from typing import Optional
-from ..models.user_model import User
-from ..schema.user_schema import UserCreateDTO
+from ..domain.abstracts.password_hasher_abstract import PasswordHasher
 import asyncio
-
-
-class PasswordHasher(ABC):
-    @abstractmethod
-    async def hash(self, plain: str) -> str:
-        """Takes plain password and returns hashed string."""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def verify(self, hashed: str, plain: str) -> bool:
-        """Check whether plain matches hashed"""
-        raise NotImplementedError
-
-
-class IUserRepository(ABC):
-    @abstractmethod
-    async def get_user_by_email(self, email: str) -> Optional[User]:
-        """Return a User or None by email."""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def create_user(self, user_create: UserCreateDTO, password_hash: str) -> User:
-        """Create a user and return the created User."""
-        raise NotImplementedError
-
 
 class Argon2PasswordHasher(PasswordHasher):
     """

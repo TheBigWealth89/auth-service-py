@@ -1,11 +1,16 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Request, Response
-from ..core.db import AsyncSessionLocal
-from ..schema.user_schema import UserCreateDTO, LoginDTO, loginResponseDTO
-from ..services.abstract import Argon2PasswordHasher, PasswordHasher
-from ..services.user_service import AuthService
-from ..repositories.user_repo_postgres import PostgresUserRepository
-from ..core.token import get_current_user_id
+from ...core.db import AsyncSessionLocal
+from ...schema.auth_dto import LoginDTO, loginResponseDTO
+from ...domain.abstracts.password_hasher_abstract import PasswordHasher
+from ...utils.password_hasher import Argon2PasswordHasher
+# from ...services.user_service import AuthService
+from ...domain.auth.auth_service import AuthService
+from ...domain.auth.token_service import TokenService
+from ...repositories.user_repo_postgres import PostgresUserRepository
+from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
+from ...core.token import get_current_user_id
 router = APIRouter()
 
 
@@ -13,27 +18,22 @@ def get_user_repo() -> PostgresUserRepository:
     return PostgresUserRepository(AsyncSessionLocal)
 
 
+def get_refresh_tokens_repo() -> PostgresRefreshTokenRepository:
+    return PostgresRefreshTokenRepository(AsyncSessionLocal)
+
+
 def get_hasher() -> PasswordHasher:
     return Argon2PasswordHasher()
 
 
-@router.post("/auth/v1/register")
-async def register(payload: UserCreateDTO, user_repo: PostgresUserRepository = Depends(get_user_repo), hasher: PasswordHasher = Depends(get_hasher)):
-    svc = AuthService(user_repo, hasher)
-    try:
-        user = await svc.register(payload)
-        return {"id": user.id, "name": user.name, "email": user.email}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.post("/auth/v1/login", response_model=loginResponseDTO)
+@router.post("/auth/login", response_model=loginResponseDTO)
 async def login(payload: LoginDTO,
                 response: Response,
                 user_repo: PostgresUserRepository = Depends(get_user_repo),
-                hasher: PasswordHasher = Depends(get_hasher)
+                hasher: PasswordHasher = Depends(get_hasher),
+                refresh_tokens=Depends(get_refresh_tokens_repo)
                 ):
-    svc = AuthService(user_repo, hasher)
+    svc = AuthService(user_repo, hasher, refresh_tokens)
     try:
         token = await svc.login(payload)
         access_token = token.access_token
@@ -47,7 +47,7 @@ async def login(payload: LoginDTO,
             secure=False,              # set to True in production with HTTPS
             samesite="none",          # required for cross-site apps
             max_age=60 * 60 * 24 * 7,  # 7 days
-            path="/auth/v1/refresh"   # cookie only sent to refresh endpoint
+            path="/"   # cookie only sent to refresh endpoint
         )
 
         return {"access_token": access_token}
@@ -58,15 +58,17 @@ async def login(payload: LoginDTO,
         raise HTTPException(status_code=500, detail="Internal error") from exc
 
 
-@router.post("/auth/v1/refresh")
+@router.post("/auth/refresh")
 async def refresh(
-        request: Request,
-        response: Response,
-        user_repo=Depends(get_user_repo), hasher=Depends(get_hasher)):
+    request: Request,
+    response: Response,
+        hasher=Depends(get_hasher), refresh_tokens=Depends(get_refresh_tokens_repo)):
+
     raw_token = request.cookies.get("refresh_token")
+    print(raw_token)
     if not raw_token:
         raise HTTPException(status_code=400, detail="refresh_token required")
-    svc = AuthService(user_repo, hasher)
+    svc = TokenService(refresh_tokens, hasher)
     try:
         tokens = await svc.refresh_access_token(raw_token)
         new_access = tokens["access_token"]
@@ -81,7 +83,7 @@ async def refresh(
             secure=False,  # set to True in production with HTTPS
             samesite="none",
             max_age=60 * 60 * 24 * 7,
-            path="/auth/v1/refresh"
+            path="/"
         )
 
         return {"access_token": new_access, "expires_at": expires_at}
@@ -90,19 +92,19 @@ async def refresh(
         raise HTTPException(status_code=401, detail=str(e))
 
 
-@router.post("/auth/v1/logout")
+@router.post("/auth/logout")
 async def logout(
         response: Response,
         user_id: int = Depends(get_current_user_id),
-        user_repo=Depends(get_user_repo), hasher=Depends(get_hasher)):
+        refresh_tokens=Depends(get_refresh_tokens_repo), hasher=Depends(get_hasher),user_repo: PostgresUserRepository = Depends(get_user_repo) ):
 
-    svc = AuthService(user_repo, hasher)
+    svc = AuthService(user_repo, hasher, refresh_tokens)
     try:
         await svc.logout(user_id)
         # clear refresh token cookie
         response.delete_cookie(
             key="refresh_token",
-            path="/auth/v1/refresh",
+            path="/",
         )
         return {"detail": "Logged out successfully"}
     except ValueError as e:
