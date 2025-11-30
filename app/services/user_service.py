@@ -56,7 +56,7 @@ class AuthService:
         # create access token (JWT)
         access_token = create_access_token(sub=str(user.id), role=list(
             [user.role]))
-        
+
         # create refresh token (opaque raw string)
         refresh_token_raw, expires_at = await self._issue_refresh_token(user.id)
 
