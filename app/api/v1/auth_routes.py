@@ -38,7 +38,6 @@ async def login(payload: LoginDTO,
         token = await svc.login(payload)
         access_token = token.access_token
         refresh_token_raw = token.refresh_token_raw
-        print("refresh token raw", refresh_token_raw)
         # Set http-only cookie for refresh token
         response.set_cookie(
             key="refresh_token",
@@ -47,7 +46,7 @@ async def login(payload: LoginDTO,
             secure=False,              # set to True in production with HTTPS
             samesite="none",          # required for cross-site apps
             max_age=60 * 60 * 24 * 7,  # 7 days
-            path="/"   # cookie only sent to refresh endpoint
+            path="/auth/refresh"   # cookie only sent to refresh endpoint
         )
 
         return {"access_token": access_token}
@@ -83,7 +82,7 @@ async def refresh(
             secure=False,  # set to True in production with HTTPS
             samesite="none",
             max_age=60 * 60 * 24 * 7,
-            path="/"
+            path="/auth/refresh"
         )
 
         return {"access_token": new_access, "expires_at": expires_at}
@@ -96,7 +95,7 @@ async def refresh(
 async def logout(
         response: Response,
         user_id: int = Depends(get_current_user_id),
-        refresh_tokens=Depends(get_refresh_tokens_repo), hasher=Depends(get_hasher),user_repo: PostgresUserRepository = Depends(get_user_repo) ):
+        refresh_tokens=Depends(get_refresh_tokens_repo), hasher=Depends(get_hasher), user_repo: PostgresUserRepository = Depends(get_user_repo)):
 
     svc = AuthService(user_repo, hasher, refresh_tokens)
     try:
@@ -104,7 +103,7 @@ async def logout(
         # clear refresh token cookie
         response.delete_cookie(
             key="refresh_token",
-            path="/",
+            path="/auth/refresh",
         )
         return {"detail": "Logged out successfully"}
     except ValueError as e:
