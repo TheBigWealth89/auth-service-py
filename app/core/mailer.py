@@ -1,5 +1,5 @@
 import resend
-from .config import RESEND_API_KEY, EMAIL
+from .config import RESEND_API_KEY
 
 
 class ResendMailer:
@@ -11,7 +11,7 @@ class ResendMailer:
         link = f"http://localhost:8000/auth/v1/verify-email?token={token}"
 
         resend.Emails.send({
-            "from": f"Auth-Service <{EMAIL}>",
+            "from": "Auth-Service <onboarding@resend.dev>",
             "to": email,
             "subject": "Verify Your Email",
             "html": f"<p>Click to verify:</p><a href='{link}'>Verify Email</a>"

@@ -9,7 +9,7 @@ class EmailVerifyTokensRepo:
     async def create_token(self, user_id: int, token: str, expires_at):
         async with self._async_session_factory() as session:
             email_token = EmailVerificationToken(
-                user_id=user_id, token=token, expires_at=expires_at
+                user_id=user_id, hashed_token=token, expires_at=expires_at
 
             )
             session.add(email_token)
