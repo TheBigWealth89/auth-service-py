@@ -56,10 +56,6 @@ async def verify_email(token: str, user_repo: PostgresUserRepository = Depends(g
         hasher=hasher
     )
 
-    record = await verification_repo.get_token(token)
-    if not record:
-        raise HTTPException(400, "Invalid or expired token")
-
     try:
         user_id = await svc.verify_token(token)
         # Mark user verified

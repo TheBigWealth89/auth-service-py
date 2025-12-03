@@ -23,8 +23,6 @@ class UserService:
                 # resend token
                 await self._email_service.create_and_send_token(existing)
                 return {"message": "Email already registered but not verified. Verification email resent."}
-        else:
-            raise ValueError("Email already exists")
 
         # hash password (expensive; done in threadpool inside hasher)
         hashed = await self._hasher.hash(dto.password)

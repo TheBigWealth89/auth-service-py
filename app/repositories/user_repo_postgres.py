@@ -34,9 +34,9 @@ class PostgresUserRepository(IUserRepository):
             await session.refresh(user)
             return user
 
-    async def mark_verified(self):
+    async def mark_verified(self, user_id: int):
         async with self._session_factory() as session:
-            stmt = select(User).where(User.id == id)
+            stmt = select(User).where(User.id == user_id)
             result = await session.execute(stmt)
             user = result.scalars().first()
             if user:

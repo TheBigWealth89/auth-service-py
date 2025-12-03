@@ -9,7 +9,7 @@ class ResendMailer:
 
     async def send_verification_email(self, email: str, token: str):
         link = f"http://localhost:8000/auth/verify-email?token={token}"
-
+        print(f"link: {link}")
         resend.Emails.send({
             "from": "Auth-Service <onboarding@resend.dev>",
             "to": email,

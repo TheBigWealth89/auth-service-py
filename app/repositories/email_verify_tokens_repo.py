@@ -6,12 +6,12 @@ class EmailVerifyTokensRepo:
     def __init__(self, async_session_factory):
         self._async_session_factory = async_session_factory
 
-    async def create_token(self, user_id: int, token: str, expires_at):
+    async def create_token(self, token_id: str, user_id: int, token: str, expires_at):
         async with self._async_session_factory() as session:
-            email_token = EmailVerificationToken(
-                user_id=user_id, hashed_token=token, expires_at=expires_at
+            email_token = EmailVerificationToken(id=token_id,
+                                                 user_id=user_id, hashed_token=token, expires_at=expires_at
 
-            )
+                                                 )
             session.add(email_token)
             try:
                 await session.commit()
@@ -21,21 +21,15 @@ class EmailVerifyTokensRepo:
             await session.refresh(email_token)
             return email_token
 
-    async def get_token(self, token: str):
+    async def get_token_by_id(self, token_id: str):
+        async with self._async_session_factory() as session:
+            return await session.get(EmailVerificationToken, token_id)
+
+    async def delete_token(self, token_id: str):
         async with self._async_session_factory() as session:
             result = await session.execute(
                 select(EmailVerificationToken).where(
-                    EmailVerificationToken.hashed_token == token)
-            )
-
-            email_token = result.scalars().first()
-            return email_token
-
-    async def delete_token(self, token: str):
-        async with self._async_session_factory() as session:
-            result = await session.execute(
-                select(EmailVerificationToken).where(
-                    EmailVerificationToken.token == token)
+                    EmailVerificationToken.id == token_id)
             )
             email_token = result.scalars().first()
         try:
