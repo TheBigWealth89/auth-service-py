@@ -16,7 +16,7 @@ def get_verification_repo() -> EmailVerifyTokensRepo:
 
 
 def get_email_service() -> EmailVerificationService:
-    return EmailVerificationService(AsyncSessionLocal)
+    return EmailVerificationService()
 
 
 def get_mailer() -> ResendMailer:
@@ -24,11 +24,16 @@ def get_mailer() -> ResendMailer:
 
 
 @router.post("/auth/register")
-async def register(payload: UserCreateDTO, user_repo: PostgresUserRepository = Depends(get_user_repo), hasher: PasswordHasher = Depends(get_hasher), verification_repo: EmailVerifyTokensRepo = Depends(get_verification_repo), mailer: ResendMailer = Depends(get_mailer)):
+async def register(payload: UserCreateDTO,
+                   user_repo: PostgresUserRepository = Depends(get_user_repo),
+                   hasher: PasswordHasher = Depends(get_hasher),
+                   verification_repo: EmailVerifyTokensRepo = Depends(
+                       get_verification_repo),
+                   mailer: ResendMailer = Depends(get_mailer)):
+
     email_svc = EmailVerificationService(
-        user_repo=user_repo,
         verification_repo=verification_repo,
-        email_service=mailer,
+        mailer=mailer,
         hasher=hasher
     )
     svc = UserService(user_repo, hasher, email_svc)
@@ -40,20 +45,20 @@ async def register(payload: UserCreateDTO, user_repo: PostgresUserRepository = D
 
 
 @router.get("/auth/verify-email")
-async def verify_email(token: str, user_repo: PostgresUserRepository = Depends(get_user_repo), verification_repo: EmailVerifyTokensRepo = Depends(get_verification_repo), email_service: EmailVerificationService = Depends(get_email_service), hasher: PasswordHasher = Depends(get_hasher)):
+async def verify_email(token: str, user_repo: PostgresUserRepository = Depends(get_user_repo),
+                       verification_repo: EmailVerifyTokensRepo = Depends(
+                           get_verification_repo),
+                       mailer: ResendMailer = Depends(get_mailer),
+                       hasher: PasswordHasher = Depends(get_hasher)):
     svc = EmailVerificationService(
-        user_repo=user_repo,
         verification_repo=verification_repo,
-        email_service=email_service,
+        mailer=mailer,
         hasher=hasher
     )
 
-    record = await verification_repo.find_token(token)
+    record = await verification_repo.get_token(token)
     if not record:
         raise HTTPException(400, "Invalid or expired token")
-
-      # Mark the user verified
-    await user_repo.mark_verified(record.user_id)
 
     try:
         user_id = await svc.verify_token(token)

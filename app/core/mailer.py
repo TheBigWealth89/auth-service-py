@@ -8,7 +8,7 @@ class ResendMailer:
         resend.api_key = self.api_key
 
     async def send_verification_email(self, email: str, token: str):
-        link = f"http://localhost:8000/auth/v1/verify-email?token={token}"
+        link = f"http://localhost:8000/auth/verify-email?token={token}"
 
         resend.Emails.send({
             "from": "Auth-Service <onboarding@resend.dev>",

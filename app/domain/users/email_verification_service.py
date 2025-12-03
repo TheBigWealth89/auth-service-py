@@ -1,17 +1,15 @@
 import uuid
 import secrets
 from datetime import datetime, timezone, timedelta
-from ...repositories.user_repo_postgres import PostgresUserRepository
 from ...repositories.email_verify_tokens_repo import EmailVerifyTokensRepo
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...core.mailer import ResendMailer
 
 
 class EmailVerificationService:
-    def __init__(self, user_repo: PostgresUserRepository, verification_repo: EmailVerifyTokensRepo, email_service: ResendMailer, hasher: PasswordHasher):
-        self._users = user_repo
+    def __init__(self, verification_repo: EmailVerifyTokensRepo, mailer: ResendMailer, hasher: PasswordHasher):
         self._verification = verification_repo
-        self._email = email_service
+        self._email = mailer
         self._hasher = hasher
 
     async def create_and_send_token(self, user):
@@ -27,6 +25,28 @@ class EmailVerificationService:
         await self._verification.create_token(
             user_id=user.id,
             token=token_hash,
-            expires_at= datetime.now(timezone.utc) + timedelta(minutes=10)
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=10)
         )
         await self._email.send_verification_email(user.email, raw_token)
+
+    async def verify_token(self, raw_token: str):
+        """ Verify the token and return the associated user_id if valid."""
+        try:
+            token_id, secret = raw_token.split(".", 1)
+        except ValueError:
+            raise ValueError("Invalid token format")
+
+        record = await self._verification.get_token(token_id)
+        if not record:
+            raise ValueError("Invalid or expired token")
+
+        if record.expires_at < datetime.now(timezone.utc):
+            await self._verification.delete_token(token_id)
+            raise ValueError("Token has expired")
+
+        if not await self._hasher.verify(record.hashed_token, secret):
+            raise ValueError("Invalid token")
+
+        await self._verification.delete_token(token_id)
+
+        return record.user_id

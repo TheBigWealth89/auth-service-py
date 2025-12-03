@@ -25,7 +25,7 @@ class EmailVerifyTokensRepo:
         async with self._async_session_factory() as session:
             result = await session.execute(
                 select(EmailVerificationToken).where(
-                    EmailVerificationToken.token == token)
+                    EmailVerificationToken.hashed_token == token)
             )
 
             email_token = result.scalars().first()
@@ -46,5 +46,3 @@ class EmailVerifyTokensRepo:
             await session.rollback()
             raise
         return email_token
-    
-    
