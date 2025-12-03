@@ -21,6 +21,12 @@ class AuthService:
 
         email = dto.email.strip().lower()
         user = await self._users.get_user_by_email(email)
+
+        # check if user is verified
+        if user and not user.is_email_verified:
+            raise HTTPException(
+                status_code=403, detail="Email is not verified")
+
         # generic error to avoid leaking which part failed
         credentials_error = HTTPException(
             status_code=401, detail="Invalid credentials")
