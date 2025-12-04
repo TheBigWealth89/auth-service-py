@@ -5,7 +5,6 @@ from ...core.db import AsyncSessionLocal
 from ...schema.auth_dto import LoginDTO, loginResponseDTO
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...utils.password_hasher import Argon2PasswordHasher
-# from ...services.user_service import AuthService
 from ...domain.auth.auth_service import AuthService
 from ...domain.auth.token_service import TokenService
 from ...repositories.user_repo_postgres import PostgresUserRepository

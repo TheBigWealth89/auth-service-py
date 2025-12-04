@@ -1,3 +1,4 @@
+from fastapi import Response
 from fastapi import APIRouter, Depends, HTTPException
 from ...core.db import AsyncSessionLocal
 from ...schema.user_dto import UserCreateDTO
@@ -8,6 +9,9 @@ from ...repositories.user_repo_postgres import PostgresUserRepository
 from ..v1.auth_routes import get_user_repo, get_hasher
 from ...repositories.email_verify_tokens_repo import EmailVerifyTokensRepo
 from ...core.mailer import ResendMailer
+from ...core.token import create_access_token
+from ...domain.auth.token_service import TokenService
+from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
 router = APIRouter()
 
 
@@ -15,12 +19,12 @@ def get_verification_repo() -> EmailVerifyTokensRepo:
     return EmailVerifyTokensRepo(AsyncSessionLocal)
 
 
-def get_email_service() -> EmailVerificationService:
-    return EmailVerificationService()
-
-
 def get_mailer() -> ResendMailer:
     return ResendMailer()
+
+
+def get_refresh_tokens_repo() -> PostgresRefreshTokenRepository:
+    return PostgresRefreshTokenRepository(AsyncSessionLocal)
 
 
 @router.post("/auth/register")
@@ -45,22 +49,44 @@ async def register(payload: UserCreateDTO,
 
 
 @router.get("/auth/verify-email")
-async def verify_email(token: str, user_repo: PostgresUserRepository = Depends(get_user_repo),
+async def verify_email(token: str,
+                       response: Response,
+                       user_repo: PostgresUserRepository = Depends(
+                           get_user_repo),
                        verification_repo: EmailVerifyTokensRepo = Depends(
                            get_verification_repo),
                        mailer: ResendMailer = Depends(get_mailer),
-                       hasher: PasswordHasher = Depends(get_hasher)):
+                       hasher: PasswordHasher = Depends(get_hasher),
+                       token_repo: PostgresRefreshTokenRepository = Depends(get_refresh_tokens_repo
+                                                                            )):
     svc = EmailVerificationService(
         verification_repo=verification_repo,
         mailer=mailer,
         hasher=hasher
     )
 
+    rt = TokenService(refresh_token_repo=token_repo, hasher=hasher)
+
     try:
         user_id = await svc.verify_token(token)
+        user = await user_repo.get_user_by_id(user_id)
         # Mark user verified
         await user_repo.mark_verified(user_id)
 
-        return {"message": "Email verified successfully."}
+        # Login user after verification
+        access_token = create_access_token(sub=str(user.id), role=[user.role])
+        refresh_token_raw = await rt._issue_refresh_token(user.id)
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token_raw,
+            httponly=True,
+            secure=False,              # set to True in production with HTTPS
+            samesite="none",          # required for cross-site apps
+            max_age=60 * 60 * 24 * 7,  # 7 days
+            path="/auth/refresh"   # cookie only sent to refresh endpoint
+        )
+
+        return {"access_token": access_token}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
