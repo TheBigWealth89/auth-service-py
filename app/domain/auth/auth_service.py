@@ -23,7 +23,7 @@ class AuthService:
         user = await self._users.get_user_by_email(email)
 
         # check if user is verified
-        if user and not user.is_email_verified:
+        if user and not user.is_verified:
             raise HTTPException(
                 status_code=403, detail="Email is not verified")
 
@@ -36,6 +36,8 @@ class AuthService:
         valid = await self._hasher.verify(user.hashed_password, dto.password)
         if not valid:
             raise credentials_error
+
+        print("User authenticated:", user.id)
 
         # create access token (JWT)
         access_token = create_access_token(sub=str(user.id), role=list(
