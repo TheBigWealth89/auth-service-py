@@ -7,6 +7,7 @@ from ...core.mailer import ResendMailer
 
 now = datetime.now(timezone.utc)
 
+
 class EmailVerificationService:
     def __init__(self, verification_repo: EmailVerifyTokensRepo, mailer: ResendMailer, hasher: PasswordHasher):
         self._verification = verification_repo
