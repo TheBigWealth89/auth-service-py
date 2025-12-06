@@ -1,25 +1,17 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Request, Response
-from ...core.db import AsyncSessionLocal
 from ...schema.auth_dto import LoginDTO, loginResponseDTO
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
-from ...utils.password_hasher import Argon2PasswordHasher
 from ...domain.auth.auth_service import AuthService
 from ...domain.auth.token_service import TokenService
 from ...repositories.user_repo_postgres import PostgresUserRepository
 from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
 from ...core.token import get_current_user_id
 from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
+# get user repo and hasher dependencies
+from ..v1.dependencies.get_user_repo import get_user_repo, get_hasher
 router = APIRouter()
-
-
-def get_user_repo() -> PostgresUserRepository:
-    return PostgresUserRepository(AsyncSessionLocal)
-
-
-def get_hasher() -> PasswordHasher:
-    return Argon2PasswordHasher()
 
 
 @router.post("/auth/login", response_model=loginResponseDTO)
