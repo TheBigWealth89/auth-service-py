@@ -10,15 +10,12 @@ from ...domain.auth.token_service import TokenService
 from ...repositories.user_repo_postgres import PostgresUserRepository
 from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
 from ...core.token import get_current_user_id
+from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
 router = APIRouter()
 
 
 def get_user_repo() -> PostgresUserRepository:
     return PostgresUserRepository(AsyncSessionLocal)
-
-
-def get_refresh_tokens_repo() -> PostgresRefreshTokenRepository:
-    return PostgresRefreshTokenRepository(AsyncSessionLocal)
 
 
 def get_hasher() -> PasswordHasher:
@@ -30,7 +27,8 @@ async def login(payload: LoginDTO,
                 response: Response,
                 user_repo: PostgresUserRepository = Depends(get_user_repo),
                 hasher: PasswordHasher = Depends(get_hasher),
-                refresh_tokens=Depends(get_refresh_tokens_repo)
+                refresh_tokens: PostgresRefreshTokenRepository = Depends(
+                    get_refresh_tokens_repo)
                 ):
     svc = AuthService(user_repo, hasher, refresh_tokens)
     try:

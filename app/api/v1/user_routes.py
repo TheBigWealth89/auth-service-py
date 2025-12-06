@@ -1,6 +1,6 @@
 from fastapi import Response
 from fastapi import APIRouter, Depends, HTTPException
-from ...core.db import AsyncSessionLocal
+
 from ...schema.user_dto import UserCreateDTO
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...domain.users.user_service import UserService
@@ -12,14 +12,9 @@ from ...core.mailer import ResendMailer
 from ...core.token import create_access_token
 from ...domain.auth.token_service import TokenService  # refresh toke service
 from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
-# email verification repo dependency
-from ..v1.dependencies.get_verification_repo import get_verification_repo
+from .dependencies.get_verification import get_verification_repo, get_mailer 
 from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
 router = APIRouter()
-
-
-def get_mailer() -> ResendMailer:
-    return ResendMailer()
 
 
 @router.post("/auth/register")
