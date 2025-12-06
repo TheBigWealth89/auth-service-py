@@ -10,13 +10,10 @@ from ..v1.auth_routes import get_user_repo, get_hasher
 from ...repositories.email_verify_tokens_repo import EmailVerifyTokensRepo
 from ...core.mailer import ResendMailer
 from ...core.token import create_access_token
-from ...domain.auth.token_service import TokenService
+from ...domain.auth.token_service import TokenService #refresh toke service
 from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
+from ..v1.dependencies.get_verification_repo import get_verification_repo # email verification repo dependency
 router = APIRouter()
-
-
-def get_verification_repo() -> EmailVerifyTokensRepo:
-    return EmailVerifyTokensRepo(AsyncSessionLocal)
 
 
 def get_mailer() -> ResendMailer:
@@ -25,7 +22,7 @@ def get_mailer() -> ResendMailer:
 
 def get_refresh_tokens_repo() -> PostgresRefreshTokenRepository:
     return PostgresRefreshTokenRepository(AsyncSessionLocal)
-
+ 
 
 @router.post("/auth/register")
 async def register(payload: UserCreateDTO,
