@@ -6,6 +6,8 @@ from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...core.mailer import ResendMailer
 
 now = datetime.now(timezone.utc)
+# Rate limit time 60 secs
+RATE_LIMIT_SECONDS = 60
 
 
 class EmailVerificationService:
@@ -30,7 +32,20 @@ class EmailVerificationService:
             token=token_hash,
             expires_at=expires_at
         )
+
+        last_email_sent = self._verification.last_email_sent_at(user.id)
+        if last_email_sent:
+            diff = now - last_email_sent
+            if diff < timedelta(seconds=RATE_LIMIT_SECONDS):
+                seconds_left = RATE_LIMIT_SECONDS - diff.seconds
+                raise ValueError(
+                    f"Please wait {seconds_left}s before another requesting another email."
+                )
+        # otherwise allowed send email
         await self._email.send_verification_email(user.email, raw_token)
+
+        # update timestamp
+        await self._verification(user.id, now)
 
     async def verify_token(self, raw_token: str):
         """ Verify the token and return the associated user_id if valid."""
