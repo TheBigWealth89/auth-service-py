@@ -19,8 +19,8 @@ class GoogleAuthService:
 
         try:
             # Verify Google token
-            payload = google_id_token.verify_oauth2_token(
-                id_token,
+            payload = id_token.verify_oauth2_token(
+                google_id_token,
                 requests.Request(),
                 GOOGLE_CLIENT_ID
             )

@@ -10,7 +10,7 @@ from ...domain.auth.token_service import TokenService  # refresh toke service
 from ...repositories.user_repo_postgres import PostgresUserRepository
 from ...repositories.email_verify_tokens_repo import EmailVerifyTokensRepo
 from ...core.mailer import ResendMailer
-from ...core.token import create_access_token 
+from ...core.token import create_access_token
 from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
 from .dependencies.get_verification import get_verification_repo, get_mailer
 from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
@@ -92,7 +92,7 @@ async def google_auth(
     hasher: PasswordHasher = Depends(get_hasher)
 ):
     google_svc = GoogleAuthService(
-        user_repo=user_repo, token_service=token_service, hasher=hasher)
+        users=user_repo, tokens=token_service, hasher=hasher)
 
     try:
         access, refresh_token_raw, user = await google_svc.login_with_google(token)
