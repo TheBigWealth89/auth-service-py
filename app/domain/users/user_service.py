@@ -29,7 +29,7 @@ class UserService:
         if existing:
             raise ValueError("Email is already registered")
 
-        # hash password (expensive; done in threadpool inside hasher)
+        # hash password (expensive done in threadpool inside hasher)
         hashed = await self._hasher.hash(dto.password)
 
         user = await self._users.create_user(user_create=dto, password_hash=hashed)
