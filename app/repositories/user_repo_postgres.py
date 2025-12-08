@@ -15,7 +15,7 @@ class PostgresUserRepository(IUserRepository):
             user = result.scalars().first()
             # return the ORM User instance (or None)
             return user
-        
+
     async def get_user_by_id(self, user_id: int):
         async with self._session_factory() as session:
             stmt = select(User).where(User.id == user_id)
@@ -55,4 +55,22 @@ class PostgresUserRepository(IUserRepository):
                     await session.rollback()
                     raise
                 await session.refresh(user)
+            return user
+
+    async def create_google_user(self, email, google_id, name):
+        async with self._session_factory() as session:
+            user = User(
+                name=name,
+                email=email,
+                google_id=google_id,
+                is_verified=True  # OAuth users are considered verified
+            )
+            session.add(user)
+            try:
+                await session.commit()
+            except IntegrityError:
+                await session.rollback()
+                # raise so upstream can convert into a 400 or custom error
+                raise
+            await session.refresh(user)
             return user

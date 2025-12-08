@@ -39,3 +39,5 @@ class UserService:
 
         # return safe DTO
         return UserReadDTO.model_validate(user)
+    
+    

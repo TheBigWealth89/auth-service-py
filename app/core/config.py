@@ -15,8 +15,8 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(
     os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7")
 )
 
-EMAIL = os.getenv("EMAIL", "")
-if not EMAIL:
-    raise ValueError("EMAIL environment variable is not set")
 # Resend API Key
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+
+# Google OAuth client ID
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
