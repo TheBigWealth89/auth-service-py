@@ -25,6 +25,17 @@ class EmailVerificationService:
         raw_token = f"{token_id}.{secret}"
 
         token_hash = await self._hasher.hash(secret)
+
+        # Get the last time email was sent
+        last = await self._verification.get_last_email_sent_at(user.id)
+
+        # compare it with the current time
+        if last and (now - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
+            seconds_left = RATE_LIMIT_SECONDS - (now - last).seconds
+            raise ValueError(
+                f"Please wait {seconds_left}s before another requesting another email."
+            )
+
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
         await self._verification.create_token(
             token_id=token_id,
@@ -33,15 +44,8 @@ class EmailVerificationService:
             expires_at=expires_at
         )
 
-        last = await self._verification.get_last_email_sent_at(user.id)
-        if last and (now - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
-            seconds_left = RATE_LIMIT_SECONDS - (now - last).seconds
-            raise ValueError(
-                f"Please wait {seconds_left}s before another requesting another email."
-            )
-
         # otherwise allowed send email
-        await self._email.send_verification_email(user.email, raw_token)
+        # await self._email.send_verification_email(user.email, raw_token)
 
         # update timestamp
         await self._verification.update_last_email_sent_at(user.id, now)
