@@ -33,7 +33,7 @@ class EmailVerificationService:
             expires_at=expires_at
         )
 
-        last = self._verification.get_last_email_sent_at(user.id)
+        last = await self._verification.get_last_email_sent_at(user.id)
         if last and (now - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
             seconds_left = RATE_LIMIT_SECONDS - (now - last).seconds
             raise ValueError(

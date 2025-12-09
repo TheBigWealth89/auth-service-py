@@ -38,8 +38,9 @@ class EmailVerifyTokensRepo:
     async def update_last_email_sent_at(self, user_id: int, timestamp: datetime):
         async with self._async_session_factory() as session:
             result = session.execute(
-                select(EmailVerificationToken)
-            ).where(EmailVerificationToken.user_id == user_id)
+                select(EmailVerificationToken).where(
+                    EmailVerificationToken.user_id == user_id)
+            )
 
             record = result.scalar_one_or_none()
             if record:
