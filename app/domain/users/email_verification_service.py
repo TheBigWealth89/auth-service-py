@@ -1,5 +1,6 @@
 import uuid
 import secrets
+import math
 from datetime import datetime, timezone, timedelta
 from ...repositories.email_verify_tokens_repo import EmailVerifyTokensRepo
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
@@ -17,7 +18,8 @@ class EmailVerificationService:
         self._hasher = hasher
 
     async def create_and_send_token(self, user):
-        """ Create a verification token and send it to the user's email."""
+
+        # Create a verification token and send it to the user's email.
         token_id = uuid.uuid4().hex
 
         secret = secrets.token_urlsafe(32)
@@ -29,11 +31,12 @@ class EmailVerificationService:
         # Get the last time email was sent
         last = await self._verification.get_last_email_sent_at(user.id)
 
-        # compare it with the current time
-        if last and (now - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
-            seconds_left = RATE_LIMIT_SECONDS - (now - last).seconds
+        # check rate limit
+        if last and (datetime.now(timezone.utc) - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
+            seconds_left = RATE_LIMIT_SECONDS - \
+                (datetime.now(timezone.utc) - last).total_seconds()
             raise ValueError(
-                f"Please wait {seconds_left}s before another requesting another email."
+                f"Please wait {math.ceil(seconds_left)}s before another requesting another email."
             )
 
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
@@ -44,8 +47,8 @@ class EmailVerificationService:
             expires_at=expires_at
         )
 
-        # otherwise allowed send email
-        # await self._email.send_verification_email(user.email, raw_token)
+        # send token to user's email
+        await self._email.send_verification_email(user.email, raw_token)
 
         # update timestamp
         await self._verification.update_last_email_sent_at(user.id, now)
