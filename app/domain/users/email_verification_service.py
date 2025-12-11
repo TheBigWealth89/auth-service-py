@@ -47,7 +47,7 @@ class EmailVerificationService:
             expires_at=expires_at
         )
 
-        # send token to user's email
+        # send raw_token to user's email
         await self._email.send_verification_email(user.email, raw_token)
 
         # update timestamp

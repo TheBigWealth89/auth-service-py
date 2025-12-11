@@ -40,7 +40,7 @@ class PostgresUserRepository(IUserRepository):
                 # raise so upstream can convert into a 400 or custom error
                 raise
             await session.refresh(user)
-            return user
+            return user  # return user
 
     async def mark_verified(self, user_id: int):
         async with self._session_factory() as session:
