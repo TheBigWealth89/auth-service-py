@@ -152,7 +152,7 @@ RESEND_API_KEY=re_123456789
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_secret
 ```
-
+ 
 ## Database Migrations
 
 This project uses Alembic for migrations. To run migrations:
