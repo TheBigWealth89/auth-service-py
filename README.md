@@ -117,7 +117,23 @@ pip install -r requirements.txt
 
 ## Environment Variables
 
-Create a `.env` file in the project root with the variables your environment needs. Example:
+Copy the provided example file and fill in your values. A `.env.example` file is included in the project root.
+
+On macOS / Linux:
+
+```bash
+cp .env.example .env
+```
+
+On Windows (PowerShell):
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Open the new `.env` and update the placeholders with your real credentials. The project loads environment variables using the method in `app/core/config.py` (e.g., `python-dotenv`).
+
+Example keys included in `.env.example`:
 
 ```ini
 # Database
@@ -136,8 +152,6 @@ RESEND_API_KEY=re_123456789
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_secret
 ```
-
-Load these with your preferred method (e.g., `python-dotenv` used in `core/config.py`).
 
 ## Database Migrations
 
