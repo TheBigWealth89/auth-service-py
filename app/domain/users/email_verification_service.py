@@ -4,6 +4,7 @@ import math
 from datetime import datetime, timezone, timedelta
 from ...repositories.email_verify_tokens_repo import EmailVerifyTokensRepo
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
+from ..abstracts.email_verify_abstract import IEmailRepository
 from ...core.mailer import ResendMailer
 
 now = datetime.now(timezone.utc)
@@ -12,7 +13,7 @@ RATE_LIMIT_SECONDS = 60
 
 
 class EmailVerificationService:
-    def __init__(self, verification_repo: EmailVerifyTokensRepo, mailer: ResendMailer, hasher: PasswordHasher):
+    def __init__(self, verification_repo: IEmailRepository, mailer: ResendMailer, hasher: PasswordHasher):
         self._verification = verification_repo
         self._email = mailer
         self._hasher = hasher

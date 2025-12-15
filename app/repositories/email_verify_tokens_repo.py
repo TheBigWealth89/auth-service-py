@@ -1,9 +1,10 @@
 from sqlalchemy.future import select
 from datetime import datetime, timezone
+from ..domain.abstracts.email_verify_abstract import IEmailRepository
 from ..models.email_verification_model import EmailVerificationToken
 
 
-class EmailVerifyTokensRepo:
+class EmailVerifyTokensRepo(IEmailRepository):
     def __init__(self, async_session_factory):
         self._async_session_factory = async_session_factory
 
@@ -72,7 +73,7 @@ class EmailVerifyTokensRepo:
                 )
             )
 
-        record = result.scalar()
+            record = result.scalar_one_or_none()
 
         if record:
             record.last_email_sent_at = timestamp

@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ...schema.user_dto import UserCreateDTO  # user creation DTO
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
+from ...domain.abstracts.user_abstract import IUserRepository
+from ...domain.abstracts.email_verify_abstract import IEmailRepository
 from ...domain.users.user_service import UserService
 from ...domain.users.google_oauth_service import GoogleAuthService
 from ...domain.users.email_verification_service import EmailVerificationService
 from ...domain.auth.token_service import TokenService  # refresh toke service
-from ...repositories.user_repo_postgres import PostgresUserRepository
-from ...repositories.email_verify_tokens_repo import EmailVerifyTokensRepo
 from ...core.mailer import ResendMailer
 from ...core.token import create_access_token
 from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
@@ -20,9 +20,9 @@ router = APIRouter()
 
 @router.post("/auth/register")
 async def register(payload: UserCreateDTO,
-                   user_repo: PostgresUserRepository = Depends(get_user_repo),
+                   user_repo: IUserRepository = Depends(get_user_repo),
                    hasher: PasswordHasher = Depends(get_hasher),
-                   verification_repo: EmailVerifyTokensRepo = Depends(
+                   verification_repo: IEmailRepository = Depends(
                        get_verification_repo),
                    mailer: ResendMailer = Depends(get_mailer)):
 
@@ -42,9 +42,9 @@ async def register(payload: UserCreateDTO,
 @router.get("/auth/verify-email")
 async def verify_email(token: str,
                        response: Response,
-                       user_repo: PostgresUserRepository = Depends(
+                       user_repo: IUserRepository = Depends(
                            get_user_repo),
-                       verification_repo: EmailVerifyTokensRepo = Depends(
+                       verification_repo: IEmailRepository = Depends(
                            get_verification_repo),
                        mailer: ResendMailer = Depends(get_mailer),
                        hasher: PasswordHasher = Depends(get_hasher),
@@ -87,7 +87,7 @@ async def verify_email(token: str,
 async def google_auth(
     token: str,
     response: Response,
-    user_repo: PostgresUserRepository = Depends(get_user_repo),
+    user_repo: IUserRepository = Depends(get_user_repo),
     token_service: TokenService = Depends(get_refresh_tokens_repo),
     hasher: PasswordHasher = Depends(get_hasher)
 ):
