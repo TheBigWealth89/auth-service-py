@@ -7,12 +7,6 @@ A high-performance, secure, and production-ready authentication microservice bui
 ![Security](https://img.shields.io/badge/Security-OWASP%20Compliant-red)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-# 🛡️ FastAPI Authentication Service
-
-A secure, production-ready authentication microservice built with **FastAPI** and **Python**. Designed with clear abstractions, strong typing, and modern security practices (opaque refresh tokens, reuse detection, HttpOnly cookies).
-
-![Python](https://img.shields.io/badge/Python-3.10+-blue.svg) ![FastAPI](https://img.shields.io/badge/FastAPI-0.95+-009688.svg) ![License](https://img.shields.io/badge/License-MIT-green)
-
 ## Table of Contents
 
 - [Overview](#overview)
