@@ -57,7 +57,7 @@ class PostgresUserRepository(IUserRepository):
                 await session.refresh(user)
             return user
 
-    async def create_google_user(self, email, google_id, name):
+    async def create_google_user(self, email: str, google_id: str, name: str):
         async with self._session_factory() as session:
             user = User(
                 name=name,

@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from ...repositories.user_repo_postgres import PostgresUserRepository
+from ..abstracts.user_abstract import IUserRepository
 from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...schema.auth_dto import LoginDTO, TokenDTO
@@ -8,7 +8,7 @@ from .token_service import TokenService
 
 
 class AuthService:
-    def __init__(self, user_repo: PostgresUserRepository, hasher: PasswordHasher, refresh_token_repo: PostgresRefreshTokenRepository):
+    def __init__(self, user_repo: IUserRepository, hasher: PasswordHasher, refresh_token_repo: PostgresRefreshTokenRepository):
         self._users = user_repo
         self._hasher = hasher
         self._tokens = refresh_token_repo

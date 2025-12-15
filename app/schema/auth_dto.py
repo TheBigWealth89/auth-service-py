@@ -9,7 +9,6 @@ class LoginDTO(BaseModel):
 
 class loginResponseDTO(BaseModel):
     access_token: str
-    # refresh_token_raw:str
 
 
 class TokenDTO(BaseModel):

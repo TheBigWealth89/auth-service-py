@@ -1,11 +1,11 @@
-from ...repositories.user_repo_postgres import PostgresUserRepository
+from ..abstracts.user_abstract import IUserRepository
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...schema.user_dto import UserCreateDTO, UserReadDTO
 from ..users.email_verification_service import EmailVerificationService
 
 
 class UserService:
-    def __init__(self, user_repo: PostgresUserRepository, hasher: PasswordHasher, email_service: EmailVerificationService):
+    def __init__(self, user_repo: IUserRepository, hasher: PasswordHasher, email_service: EmailVerificationService):
         self._users = user_repo
         self._hasher = hasher
         self._email_service = email_service

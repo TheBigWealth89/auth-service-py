@@ -2,10 +2,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Request, Response
 from ...schema.auth_dto import LoginDTO, loginResponseDTO
+from ...domain.abstracts.user_abstract import IUserRepository
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...domain.auth.auth_service import AuthService
 from ...domain.auth.token_service import TokenService
-from ...repositories.user_repo_postgres import PostgresUserRepository
 from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
 from ...core.token import get_current_user_id
 from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.post("/auth/login", response_model=loginResponseDTO)
 async def login(payload: LoginDTO,
                 response: Response,
-                user_repo: PostgresUserRepository = Depends(get_user_repo),
+                user_repo: IUserRepository = Depends(get_user_repo),
                 hasher: PasswordHasher = Depends(get_hasher),
                 refresh_tokens: PostgresRefreshTokenRepository = Depends(
                     get_refresh_tokens_repo)
@@ -84,7 +84,7 @@ async def refresh(
 async def logout(
         response: Response,
         user_id: int = Depends(get_current_user_id),
-        refresh_tokens=Depends(get_refresh_tokens_repo), hasher=Depends(get_hasher), user_repo: PostgresUserRepository = Depends(get_user_repo)):
+        refresh_tokens=Depends(get_refresh_tokens_repo), hasher=Depends(get_hasher), user_repo: IUserRepository = Depends(get_user_repo)):
 
     svc = AuthService(user_repo, hasher, refresh_tokens)
     try:

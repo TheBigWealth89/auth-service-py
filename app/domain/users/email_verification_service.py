@@ -48,7 +48,8 @@ class EmailVerificationService:
         )
 
         # send raw_token to user's email
-        await self._email.send_verification_email(user.email, raw_token)
+        # await self._email.send_verification_email(user.email, raw_token)
+        print("RAW TOKEN :", raw_token)
 
         # update timestamp
         await self._verification.update_last_email_sent_at(user.id, now)
