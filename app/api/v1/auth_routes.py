@@ -4,9 +4,9 @@ from fastapi import Request, Response
 from ...schema.auth_dto import LoginDTO, loginResponseDTO
 from ...domain.abstracts.user_abstract import IUserRepository
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
+from ...domain.abstracts.refresh_token_abstract import IOpaqueRefreshToken
 from ...domain.auth.auth_service import AuthService
 from ...domain.auth.token_service import TokenService
-from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
 from ...core.token import get_current_user_id
 from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
 # get user repo and hasher dependencies
@@ -19,7 +19,7 @@ async def login(payload: LoginDTO,
                 response: Response,
                 user_repo: IUserRepository = Depends(get_user_repo),
                 hasher: PasswordHasher = Depends(get_hasher),
-                refresh_tokens: PostgresRefreshTokenRepository = Depends(
+                refresh_tokens: IOpaqueRefreshToken = Depends(
                     get_refresh_tokens_repo)
                 ):
     svc = AuthService(user_repo, hasher, refresh_tokens)

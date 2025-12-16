@@ -5,13 +5,13 @@ from ...schema.user_dto import UserCreateDTO  # user creation DTO
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...domain.abstracts.user_abstract import IUserRepository
 from ...domain.abstracts.email_verify_abstract import IEmailRepository
+from ...domain.abstracts.refresh_token_abstract import IOpaqueRefreshToken
 from ...domain.users.user_service import UserService
 from ...domain.users.google_oauth_service import GoogleAuthService
 from ...domain.users.email_verification_service import EmailVerificationService
 from ...domain.auth.token_service import TokenService  # refresh toke service
 from ...core.mailer import ResendMailer
 from ...core.token import create_access_token
-from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
 from .dependencies.get_verification import get_verification_repo, get_mailer
 from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
 from ..v1.dependencies.get_user_repo import get_user_repo, get_hasher
@@ -48,7 +48,7 @@ async def verify_email(token: str,
                            get_verification_repo),
                        mailer: ResendMailer = Depends(get_mailer),
                        hasher: PasswordHasher = Depends(get_hasher),
-                       token_repo: PostgresRefreshTokenRepository = Depends(get_refresh_tokens_repo
+                       token_repo: IOpaqueRefreshToken = Depends(get_refresh_tokens_repo
                                                                             )):
     svc = EmailVerificationService(
         verification_repo=verification_repo,
