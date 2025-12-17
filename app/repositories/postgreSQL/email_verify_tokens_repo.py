@@ -1,7 +1,7 @@
 from sqlalchemy.future import select
 from datetime import datetime, timezone
-from ..domain.abstracts.email_verify_abstract import IEmailRepository
-from ..models.email_verification_model import EmailVerificationToken
+from ...domain.abstracts.email_verify_abstract import IEmailRepository
+from ...models.email_verification_model import EmailVerificationToken
 
 
 class EmailVerifyTokensRepo(IEmailRepository):

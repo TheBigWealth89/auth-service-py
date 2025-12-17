@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from ..domain.abstracts.user_abstract import IUserRepository
-from ..models.user_model import User
+from ...domain.abstracts.user_abstract import IUserRepository
+from ...models.user_model import User
 
 
 class PostgresUserRepository(IUserRepository):

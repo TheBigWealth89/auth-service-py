@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from ..abstracts.user_abstract import IUserRepository
-from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
+from ...repositories.postgreSQL.refresh_token_repo import PostgresRefreshTokenRepository
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...schema.auth_dto import LoginDTO, TokenDTO
 from ...core.token import create_access_token

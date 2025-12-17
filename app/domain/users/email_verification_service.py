@@ -2,7 +2,7 @@ import uuid
 import secrets
 import math
 from datetime import datetime, timezone, timedelta
-from ...repositories.email_verify_tokens_repo import EmailVerifyTokensRepo
+from ...repositories.postgreSQL.email_verify_tokens_repo import EmailVerifyTokensRepo
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ..abstracts.email_verify_abstract import IEmailRepository
 from ...core.mailer import ResendMailer

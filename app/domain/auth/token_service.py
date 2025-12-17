@@ -1,7 +1,7 @@
 import uuid
 import secrets
 from datetime import datetime, timedelta, timezone
-from ...repositories.refresh_token_repo import PostgresRefreshTokenRepository
+from ...repositories.postgreSQL.refresh_token_repo import PostgresRefreshTokenRepository
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...core.config import REFRESH_TOKEN_EXPIRE_DAYS
 from ...core.token import create_access_token
