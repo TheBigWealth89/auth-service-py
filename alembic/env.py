@@ -65,6 +65,7 @@ try:
     import app.models.user_model   # <-- adjust this to your models module(s)
     import app.models.refresh_token_model
     import app.models.email_verification_model
+    import app.models.password_reset_tokens
     # import app.models.other_model  # add more if you have additional model files
 except Exception:
     # If imports fail, let it surface below when we inspect metadata

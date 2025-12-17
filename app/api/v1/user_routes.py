@@ -9,12 +9,13 @@ from ...domain.abstracts.refresh_token_abstract import IOpaqueRefreshToken
 from ...domain.users.user_service import UserService
 from ...domain.users.google_oauth_service import GoogleAuthService
 from ...domain.users.email_verification_service import EmailVerificationService
+from ...domain.users.reset_password_service import PasswordResetService
 from ...domain.auth.token_service import TokenService  # refresh toke service
 from ...core.mailer import ResendMailer
 from ...core.token import create_access_token
 from .dependencies.get_verification import get_verification_repo, get_mailer
 from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
-from ..v1.dependencies.get_user_repo import get_user_repo, get_hasher
+from ..v1.dependencies.get_user_repo import get_user_repo, get_hasher, get_pw_reset_repo
 router = APIRouter()
 
 
@@ -49,7 +50,7 @@ async def verify_email(token: str,
                        mailer: ResendMailer = Depends(get_mailer),
                        hasher: PasswordHasher = Depends(get_hasher),
                        token_repo: IOpaqueRefreshToken = Depends(get_refresh_tokens_repo
-                                                                            )):
+                                                                 )):
     svc = EmailVerificationService(
         verification_repo=verification_repo,
         mailer=mailer,
@@ -113,3 +114,20 @@ async def google_auth(
         }
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+@router.post("/auth/reset-password")
+async def request_reset(email: str, user_repo: IUserRepository = Depends(get_user_repo),
+                        reset_service: PasswordResetService = Depends(get_pw_reset_repo)):
+    user = await user_repo.get_user_by_email(email)
+    if not user:
+        return {"message": "If that email exists, a reset link will be sent."}
+
+    await reset_service.send_reset_email(user)
+    return {"message": "Reset link sent."}
+
+
+@router.post("/auth/reset-password/confirm")
+async def confirm_reset(token: str, new_password: str, user_repo: IUserRepository = Depends(get_user_repo), reset_service: PasswordResetService = Depends(get_pw_reset_repo)):
+    await reset_service.reset_password(token, new_password, user_repo)
+    return {"message": "Password updated successfully."}

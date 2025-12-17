@@ -50,3 +50,46 @@ class ResendMailer:
     </div>
 """
         })
+
+    async def send_reset_password_email(self, email: str, token: str):
+
+        link = f"http://localhost:8000/auth/reset-password?token={token}"
+
+        print(f"link: {link}")
+        resend.Emails.send({
+            "from": "Auth-Service <onboarding@resend.dev>",
+            "to": email,
+            "subject": "Reset password Email",
+            "html": f"""
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Reset your password</h2>
+        
+        <p>
+            <a href="{link}" 
+               style="
+                   background-color: #4CAF50;
+                   color: white;
+                   padding: 10px 16px;
+                   text-decoration: none;
+                   border-radius: 6px;
+                   display: inline-block;
+                   font-weight: bold;
+               ">
+                Reset Password
+            </a>
+        </p>
+
+        <p>If the button above doesn't work, copy and paste this link into your browser:</p>
+        <p style="word-break: break-all;">
+            {link}
+        </p>
+
+        <hr>
+
+        <p style="font-size: 12px; color: #555;">
+            This link will expire in 10 minutes for security reasons.
+            If you didn’t request this, you can safely ignore the email.
+        </p>
+    </div>
+"""
+        })
