@@ -2,43 +2,56 @@ import uuid
 import secrets
 import math
 from datetime import datetime, timezone, timedelta
+from ...schema.user_dto import ResetPasswordDTO
 from ..abstracts.password_reset_abstract import IPasswordResetToken
+from ..abstracts.user_abstract import IUserRepository
 from ..abstracts.password_hasher_abstract import PasswordHasher
 from ...core.mailer import ResendMailer
 
 
-now = datetime.now(timezone)
+now = datetime.now(timezone.utc)
+
 # rate limit 60 secs
 RATE_LIMIT_SECONDS = 60
 
 
 class PasswordResetService:
-    def __init__(self, password_reset_repo: IPasswordResetToken, mailer: ResendMailer, hasher: PasswordHasher):
-        self.password_reset = password_reset_repo
-        self.mailer = mailer
+    def __init__(self, password_reset_repo: IPasswordResetToken, user_repo: IUserRepository, mailer: ResendMailer, hasher: PasswordHasher):
+        self._password_reset = password_reset_repo
+        self._user_repo = user_repo
+        self._mailer = mailer
         self._hasher = hasher
 
-    async def create_and_send_token(self, user):
-        # create password reset token and send it user's email
+    async def create_and_send_token(self, dto: ResetPasswordDTO):
+
+        # Get user by email
+        email = dto.email.strip().lower()
+        user = await self._user_repo.get_user_by_email(email)
+
+        if user is None:
+            return {"message": "If that email exists, a reset link will be sent."}
+
+        # get the last timestamp email sent
+        last = await self._password_reset.get_last_email_sent_at(user.id)
+
+        # check rate  limit
+        if last and (now - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
+            seconds_left = RATE_LIMIT_SECONDS - \
+                (now - last).total_seconds()
+            raise ValueError(
+                f"Please wait {math.ceil(seconds_left)}s before another requesting another email."
+            )
+
+        expires_at = now + timedelta(minutes=10)
+
+        # create password reset token
         token_id = uuid.uuid4().hex
 
         secret = secrets.token_urlsafe(32)
         raw_token = f"{token_id}.{secret}"
         token_hash = await self._hasher.hash(secret)
 
-        # get the last timestamp email sent
-        last = await self._password_reset.get_last_email_sent_at(user.id)
-
-        # check rate  limit
-        if last and (datetime.now(timezone.utc) - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
-            seconds_left = RATE_LIMIT_SECONDS - \
-                (datetime.now(timezone.utc) - last).total_seconds()
-            raise ValueError(
-                f"Please wait {math.ceil(seconds_left)}s before another requesting another email."
-            )
-
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-        await self._verification.create_token(
+        await self._password_reset.create_token(
             token_id=token_id,
             user_id=user.id,
             token=token_hash,
@@ -46,7 +59,7 @@ class PasswordResetService:
         )
 
         # send raw token to user's email
-        await self._mailer.send_reset_password_email(user.email, raw_token)
+        # await self._mailer.send_reset_password_email(user.email, raw_token)
 
         print("Raw token:", raw_token)
 

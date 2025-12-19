@@ -1,11 +1,12 @@
 from fastapi import Response
 from fastapi import APIRouter, Depends, HTTPException
 
-from ...schema.user_dto import UserCreateDTO  # user creation DTO
+from ...schema.user_dto import UserCreateDTO, ResetPasswordDTO  # user creation DTO
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...domain.abstracts.user_abstract import IUserRepository
 from ...domain.abstracts.email_verify_abstract import IEmailRepository
 from ...domain.abstracts.refresh_token_abstract import IOpaqueRefreshToken
+from ...domain.abstracts.password_reset_abstract import IPasswordResetToken
 from ...domain.users.user_service import UserService
 from ...domain.users.google_oauth_service import GoogleAuthService
 from ...domain.users.email_verification_service import EmailVerificationService
@@ -117,14 +118,17 @@ async def google_auth(
 
 
 @router.post("/auth/reset-password")
-async def request_reset(email: str, user_repo: IUserRepository = Depends(get_user_repo),
-                        reset_service: PasswordResetService = Depends(get_pw_reset_repo)):
-    user = await user_repo.get_user_by_email(email)
-    if not user:
-        return {"message": "If that email exists, a reset link will be sent."}
+async def request_reset(payload: ResetPasswordDTO, password_reset_repo: IPasswordResetToken = Depends(get_pw_reset_repo), user_repo: IUserRepository = Depends(get_user_repo), mailer: ResendMailer = Depends(get_mailer), hasher: PasswordHasher = Depends(get_hasher)):
 
-    await reset_service.send_reset_email(user)
-    return {"message": "Reset link sent."}
+    svc = PasswordResetService(
+        password_reset_repo=password_reset_repo,
+        user_repo=user_repo,
+        mailer=mailer,
+        hasher=hasher
+    )
+
+    await svc.create_and_send_token(payload)
+    return {"message": "If that email exists, a reset link will be sent."}
 
 
 @router.post("/auth/reset-password/confirm")
