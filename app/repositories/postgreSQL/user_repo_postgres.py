@@ -75,19 +75,18 @@ class PostgresUserRepository(IUserRepository):
             await session.refresh(user)
             return user
 
-    async def update_password(self, user_id: int, password_hash: str):
+    async def update_password(self, user_id: int, hashed_password: str):
         async with self._session_factory() as session:
-
-            result = await session.execute(
-                select(User).where(User.id == user_id)
-            )
+            stmt = select(User).where(User.id == user_id)
+            result = await session.execute(stmt)
 
             user = result.scalar_one_or_none()
+            print("user :", user)
             if not user:
                 return None   # or raise exception
 
             # Update the password
-            user.password_hash = password_hash
+            user.hashed_password = hashed_password
 
             await session.commit()
             await session.refresh(user)

@@ -17,4 +17,4 @@ class User(Base):
                         server_default=func.now(), nullable=False)
 
     def __repr__(self):
-        return f"<User id={self.id} email={self.email}>"
+        return f"<User id={self.id} email={self.email} hashed_password ={self.hashed_password}>"

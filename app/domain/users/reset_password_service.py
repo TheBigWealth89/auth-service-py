@@ -1,15 +1,15 @@
 import uuid
 import secrets
 import math
+from fastapi import HTTPException, status
 from datetime import datetime, timezone, timedelta
 from ...schema.user_dto import ResetPasswordDTO
 from ..abstracts.password_reset_abstract import IPasswordResetToken
 from ..abstracts.user_abstract import IUserRepository
 from ..abstracts.password_hasher_abstract import PasswordHasher
+from ...schema.user_dto import NewPasswordDTO
 from ...core.mailer import ResendMailer
 
-
-now = datetime.now(timezone.utc)
 
 # rate limit 60 secs
 RATE_LIMIT_SECONDS = 60
@@ -35,11 +35,13 @@ class PasswordResetService:
         last = await self._password_reset.get_last_email_sent_at(user.id)
 
         # check rate  limit
+        now = datetime.now(timezone.utc)
         if last and (now - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
             seconds_left = RATE_LIMIT_SECONDS - \
                 (now - last).total_seconds()
-            raise ValueError(
-                f"Please wait {math.ceil(seconds_left)}s before another requesting another email."
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Please wait {math.ceil(seconds_left)}s before another requesting another email."
             )
 
         expires_at = now + timedelta(minutes=10)
@@ -82,14 +84,16 @@ class PasswordResetService:
             raise ValueError("Token has expired")
 
         if not await self._hasher.verify(record.hashed_token, secret):
-            raise ValueError("Invalid token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+               detail= "Invalid token")
 
         await self._password_reset.delete_token(token_id)
 
         return record.user_id
 
-    async def reset_password(self, raw_token: str, new_password: str, user_repo):
+    async def reset_password(self, raw_token: str, dto: NewPasswordDTO, user_repo):
         user_id = await self.verify_token(raw_token)
 
-        password_hash = await self._hasher.hash(new_password)
+        password_hash = await self._hasher.hash(dto.new_password)
         await user_repo.update_password(user_id, password_hash)

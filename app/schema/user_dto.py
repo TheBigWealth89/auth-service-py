@@ -18,5 +18,10 @@ class UserReadDTO(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ResetPasswordDTO(BaseModel):
-    email:EmailStr
+    email: EmailStr
+
+
+class NewPasswordDTO(BaseModel):
+    new_password: str = Field(..., min_length=8)

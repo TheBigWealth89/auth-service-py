@@ -1,7 +1,7 @@
 from fastapi import Response
 from fastapi import APIRouter, Depends, HTTPException
 
-from ...schema.user_dto import UserCreateDTO, ResetPasswordDTO  # user creation DTO
+from ...schema.user_dto import UserCreateDTO, ResetPasswordDTO, NewPasswordDTO # user creation DTO
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...domain.abstracts.user_abstract import IUserRepository
 from ...domain.abstracts.email_verify_abstract import IEmailRepository
@@ -132,6 +132,14 @@ async def request_reset(payload: ResetPasswordDTO, password_reset_repo: IPasswor
 
 
 @router.post("/auth/reset-password/confirm")
-async def confirm_reset(token: str, new_password: str, user_repo: IUserRepository = Depends(get_user_repo), reset_service: PasswordResetService = Depends(get_pw_reset_repo)):
-    await reset_service.reset_password(token, new_password, user_repo)
+async def confirm_password(token: str, payload: NewPasswordDTO, password_reset_repo: IPasswordResetToken = Depends(get_pw_reset_repo), user_repo: IUserRepository = Depends(get_user_repo), mailer: ResendMailer = Depends(get_mailer), hasher: PasswordHasher = Depends(get_hasher)):
+
+    svc = PasswordResetService(
+        password_reset_repo=password_reset_repo,
+        user_repo=user_repo,
+        mailer=mailer,
+        hasher=hasher
+    )
+
+    await svc.reset_password(token, payload, user_repo)
     return {"message": "Password updated successfully."}
