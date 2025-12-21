@@ -81,7 +81,6 @@ class PostgresUserRepository(IUserRepository):
             result = await session.execute(stmt)
 
             user = result.scalar_one_or_none()
-            print("user :", user)
             if not user:
                 return None   # or raise exception
 

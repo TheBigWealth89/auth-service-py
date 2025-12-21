@@ -61,9 +61,8 @@ class PasswordResetService:
         )
 
         # send raw token to user's email
-        # await self._mailer.send_reset_password_email(user.email, raw_token)
+        await self._mailer.send_reset_password_email(user.email, raw_token)
 
-        print("Raw token:", raw_token)
 
         # update timestamp
         await self._password_reset.update_last_email_sent_at(user.id, now)

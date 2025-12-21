@@ -37,8 +37,7 @@ class AuthService:
         if not valid:
             raise credentials_error
 
-        print("User authenticated:", user.id)
-
+       
         # create access token (JWT)
         access_token = create_access_token(sub=str(user.id), role=list(
             [user.role]))

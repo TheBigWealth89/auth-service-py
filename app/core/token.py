@@ -14,7 +14,6 @@ def create_access_token(sub: str,  role: Iterable[str] | None = None, expires_de
         expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {"sub": str(sub), "role": list(role or []),
                  "iat": now, "exp": now + expires_delta}
-    print("payload", to_encode)
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 

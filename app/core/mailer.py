@@ -11,7 +11,6 @@ class ResendMailer:
 
         link = f"http://localhost:8000/auth/verify-email?token={token}"
 
-        print(f"link: {link}")
         resend.Emails.send({
             "from": "Auth-Service <onboarding@resend.dev>",
             "to": email,
@@ -55,7 +54,6 @@ class ResendMailer:
 
         link = f"http://localhost:8000/auth/reset-password?token={token}"
 
-        print(f"link: {link}")
         resend.Emails.send({
             "from": "Auth-Service <onboarding@resend.dev>",
             "to": email,

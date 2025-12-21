@@ -53,9 +53,9 @@ async def refresh(
         hasher=Depends(get_hasher), refresh_tokens=Depends(get_refresh_tokens_repo)):
 
     raw_token = request.cookies.get("refresh_token")
-    print(raw_token)
     if not raw_token:
-        raise HTTPException(status_code=400, detail="refresh_token required")
+        raise HTTPException(
+            status_code=400, detail="refresh_token required")
     svc = TokenService(refresh_tokens, hasher)
     try:
         tokens = await svc.refresh_access_token(raw_token)

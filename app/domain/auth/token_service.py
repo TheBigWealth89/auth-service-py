@@ -39,8 +39,7 @@ class TokenService:
             raise ValueError("Invalid token format")
 
         rt = await self._tokens.get_refresh_token_by_id(token_id)
-        print("Refresh token from DB:", rt)
-
+        
         # Attempt to use a non-existent token
         if rt is None:
             await self._tokens.revoke_all_refresh_tokens_for_user(user_id=None)

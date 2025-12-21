@@ -17,7 +17,6 @@ class EmailVerifyTokensRepo(IEmailRepository):
                 .where(EmailVerificationToken.user_id == user_id)
             )
 
-            print("RESULT :", result)
 
             existing = result.scalar_one_or_none()
 
