@@ -10,7 +10,7 @@ from ...domain.abstracts.password_reset_abstract import IPasswordResetToken
 from ...domain.users.user_service import UserService
 from ...domain.users.google_oauth_service import GoogleAuthService
 from ...domain.users.email_verification_service import EmailVerificationService
-from ...domain.users.reset_password_service import PasswordResetService
+from ...domain.users.password_reset_service import PasswordResetService
 from ...domain.auth.token_service import TokenService  # refresh toke service
 from ...core.mailer import ResendMailer
 from ...core.token import create_access_token
