@@ -52,7 +52,7 @@ class ResendMailer:
 
     async def send_reset_password_email(self, email: str, token: str):
 
-        link = f"http://localhost:8000/auth/reset-password?token={token}"
+        link = f"http://localhost:8000/auth/reset-password/confirm?token={token}"
 
         resend.Emails.send({
             "from": "Auth-Service <onboarding@resend.dev>",

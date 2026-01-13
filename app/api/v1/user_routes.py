@@ -130,7 +130,7 @@ async def request_reset(payload: ResetPasswordDTO, password_reset_repo: IPasswor
     await svc.create_and_send_token(payload)
     return {"message": "If that email exists, a reset link will be sent."}
 
-
+# confirm password endpoint
 @router.post("/auth/reset-password/confirm")
 async def confirm_password(token: str, payload: NewPasswordDTO, password_reset_repo: IPasswordResetToken = Depends(get_pw_reset_repo), user_repo: IUserRepository = Depends(get_user_repo), mailer: ResendMailer = Depends(get_mailer), hasher: PasswordHasher = Depends(get_hasher)):
 
