@@ -25,7 +25,7 @@ A high-performance, secure, and production-ready authentication microservice bui
 
 ## Overview
 
-This service handles user lifecycle tasks: registration, email verification, login, token rotation, social login (Google), and secure session management. It pairs stateless access tokens (JWT) with stateful opaque refresh tokens to enable secure token rotation and reuse detection.
+This service handles user lifecycle tasks: registration, email verification, login, reset password, token rotation, social login (Google), and secure session management. It pairs stateless access tokens (JWT) with stateful opaque refresh tokens to enable secure token rotation and reuse detection.
 
 ## Features
 
@@ -34,8 +34,32 @@ This service handles user lifecycle tasks: registration, email verification, log
 - HttpOnly cookies for tokens to reduce XSS risk
 - Email verification with rate-limited resends (60s cooldown)
 - Argon2 password hashing via `argon2-cffi`
+- Secure password reset with token-based confirmation
 - Async DB access with SQLAlchemy 2.0 + `asyncpg`
 - Clear domain/service/repository separation using ABCs for testability
+
+## 🔐 Password Reset Flow
+
+The password reset system is designed to be secure and non-enumerable.
+
+### Flow overview
+
+1. User submits email address
+2. API always returns a generic success message
+3. If the email exists:
+   - A reset token is generated
+   - The token secret is hashed before storage
+   - The raw token is emailed to the user
+4. User submits the token and new password
+5. Token is validated, invalidated, and the password is updated
+
+### Security properties
+
+- No email enumeration
+- Tokens are short-lived and single-use
+- Tokens are never stored in plaintext
+- Passwords are hashed using Argon2
+- Requests are rate-limited
 
 ## Folder Structure
 
@@ -146,7 +170,7 @@ RESEND_API_KEY=re_123456789
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_secret
 ```
- 
+
 ## Database Migrations
 
 This project uses Alembic for migrations. To run migrations:
@@ -181,6 +205,8 @@ Authentication endpoints (main ones):
 - `POST /auth/refresh` — rotate tokens (refresh)
 - `POST /auth/logout` — invalidate session and clear cookies
 - `GET /auth/google/login` — start Google OAuth flow
+- `POST /auth/reset-password` — request for password reset token
+- `POST /auth/reset-password/confirm` — confirm token and reset password
 
 Verification endpoints:
 
