@@ -16,7 +16,7 @@ class PostgresUserRepository(IUserRepository):
             # return the ORM User instance (or None)
             return user
 
-    async def get_user_by_id(self, user_id: int):
+    async def get_user_by_id(self, user_id: str):
         async with self._session_factory() as session:
             stmt = select(User).where(User.id == user_id)
             result = await session.execute(stmt)

@@ -1,3 +1,4 @@
+import uuid
 from ..abstracts.user_abstract import IUserRepository
 from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ...schema.user_dto import UserCreateDTO, UserReadDTO
@@ -21,7 +22,7 @@ class UserService:
         existing = await self._users.get_user_by_email(email)
         if existing:
             if not existing.is_verified:
-                # resend token
+                # Resend verification email
                 await self._email_service.create_and_send_token(existing)
                 return {"message": "Email already registered but not verified. Verification email resent."}
 

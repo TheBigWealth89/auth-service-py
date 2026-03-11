@@ -1,9 +1,11 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
 
 class UserCreateDTO(BaseModel):
+
     name: str = Field(..., min_length=1)
     email: EmailStr
     # plain for now, we'll hash before storing
@@ -11,7 +13,7 @@ class UserCreateDTO(BaseModel):
 
 
 class UserReadDTO(BaseModel):
-    id: int
+    id: UUID
     name: str
     email: EmailStr
     created_at: Optional[datetime]
