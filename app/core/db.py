@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
+
 # from sqlalchemy import text
 
 # import database url form config
@@ -18,8 +19,8 @@ AsyncSessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,  # This avoid needing to re-fetch objects after commit
-    autoflush=False,        # Disable auth flush for explicit control
-    future=True
+    autoflush=False,  # Disable auth flush for explicit control
+    future=True,
 )
 
 # Base class for ORM models

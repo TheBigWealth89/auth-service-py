@@ -8,15 +8,17 @@ class EmailVerifyTokensRepo(IEmailRepository):
     def __init__(self, async_session_factory):
         self._async_session_factory = async_session_factory
 
-    async def create_token(self, token_id: str, user_id: int, token: str, expires_at: datetime):
+    async def create_token(
+        self, token_id: str, user_id: int, token: str, expires_at: datetime
+    ):
         async with self._async_session_factory() as session:
 
             # Fetch row
             result = await session.execute(
-                select(EmailVerificationToken)
-                .where(EmailVerificationToken.user_id == user_id)
+                select(EmailVerificationToken).where(
+                    EmailVerificationToken.user_id == user_id
+                )
             )
-
 
             existing = result.scalar_one_or_none()
 
@@ -36,7 +38,7 @@ class EmailVerifyTokensRepo(IEmailRepository):
                     user_id=user_id,
                     hashed_token=token,
                     expires_at=expires_at,
-                    last_email_sent_at=datetime.now(tz=timezone.utc)
+                    last_email_sent_at=datetime.now(tz=timezone.utc),
                 )
                 session.add(token_row)
 
@@ -57,8 +59,9 @@ class EmailVerifyTokensRepo(IEmailRepository):
     async def get_last_email_sent_at(self, user_id: int):
         async with self._async_session_factory() as session:
             result = await session.execute(
-                select(EmailVerificationToken.last_email_sent_at).
-                where(EmailVerificationToken.user_id == user_id)
+                select(EmailVerificationToken.last_email_sent_at).where(
+                    EmailVerificationToken.user_id == user_id
+                )
             )
 
             return result.scalar()
@@ -78,8 +81,7 @@ class EmailVerifyTokensRepo(IEmailRepository):
             record.last_email_sent_at = timestamp
         else:
             record = EmailVerificationToken(
-                user_id=user_id,
-                last_email_sent_at=timestamp
+                user_id=user_id, last_email_sent_at=timestamp
             )
             session.add(record)
 
@@ -90,7 +92,8 @@ class EmailVerifyTokensRepo(IEmailRepository):
         async with self._async_session_factory() as session:
             result = await session.execute(
                 select(EmailVerificationToken).where(
-                    EmailVerificationToken.id == token_id)
+                    EmailVerificationToken.id == token_id
+                )
             )
             email_token = result.scalars().first()
         try:

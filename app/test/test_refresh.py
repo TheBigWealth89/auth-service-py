@@ -5,13 +5,12 @@ BASE = "http://localhost:8000"
 session = requests.Session()
 
 #  Login → gets refresh_token #1
-login_res = session.post(f"{BASE}/auth/login", json={
-    "email": "user@example.com",
-    "password": "stringst"
-})
+login_res = session.post(
+    f"{BASE}/auth/login", json={"email": "user@example.com", "password": "stringst"}
+)
 print("Login cookies:", session.cookies.get_dict())
 
-old_token = session.cookies.get("refresh_token")   # Save OLD token
+old_token = session.cookies.get("refresh_token")  # Save OLD token
 print("Old RT:", old_token)
 
 #  Refresh → rotate → refresh_token #2 stored in session

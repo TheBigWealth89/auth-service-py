@@ -10,7 +10,12 @@ from ...core.config import GOOGLE_CLIENT_ID
 
 class GoogleAuthService:
 
-    def __init__(self, users: PostgresUserRepository, tokens: PostgresRefreshTokenRepository, hasher: PasswordHasher):
+    def __init__(
+        self,
+        users: PostgresUserRepository,
+        tokens: PostgresRefreshTokenRepository,
+        hasher: PasswordHasher,
+    ):
         self._users = users
         self._tokens = tokens
         self._hasher = hasher
@@ -20,9 +25,7 @@ class GoogleAuthService:
         try:
             # Verify Google token
             payload = id_token.verify_oauth2_token(
-                google_id_token,
-                requests.Request(),
-                GOOGLE_CLIENT_ID
+                google_id_token, requests.Request(), GOOGLE_CLIENT_ID
             )
         except Exception:
             raise ValueError("Invalid Google token")
@@ -36,13 +39,10 @@ class GoogleAuthService:
         if not user:
             # create account if not exists
             user = await self._users.create_google_user(
-                email=email,
-                google_id=sub,
-                name=name
+                email=email, google_id=sub, name=name
             )
         # create access token (JWT)
-        access_token = create_access_token(sub=str(user.id), role=list(
-            [user.role]))
+        access_token = create_access_token(sub=str(user.id), role=list([user.role]))
 
         # create refresh token (opaque raw string)
         token_service = TokenService(self._tokens, self._hasher)

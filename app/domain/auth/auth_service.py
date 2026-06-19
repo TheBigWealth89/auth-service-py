@@ -8,15 +8,20 @@ from .token_service import TokenService
 
 
 class AuthService:
-    def __init__(self, user_repo: IUserRepository, hasher: PasswordHasher, refresh_token_repo: PostgresRefreshTokenRepository):
+    def __init__(
+        self,
+        user_repo: IUserRepository,
+        hasher: PasswordHasher,
+        refresh_token_repo: PostgresRefreshTokenRepository,
+    ):
         self._users = user_repo
         self._hasher = hasher
         self._tokens = refresh_token_repo
 
     async def login(self, dto: LoginDTO) -> TokenDTO:
         """
-    Login user and return TokenDTO 
-    with access_token and refresh_token (raw)
+        Login user and return TokenDTO
+        with access_token and refresh_token (raw)
         """
 
         email = dto.email.strip().lower()
@@ -24,12 +29,10 @@ class AuthService:
 
         # check if user is verified
         if user and not user.is_verified:
-            raise HTTPException(
-                status_code=403, detail="Email is not verified")
+            raise HTTPException(status_code=403, detail="Email is not verified")
 
         # generic error to avoid leaking which part failed
-        credentials_error = HTTPException(
-            status_code=401, detail="Invalid credentials")
+        credentials_error = HTTPException(status_code=401, detail="Invalid credentials")
         if user is None:
             raise credentials_error
 
@@ -37,16 +40,20 @@ class AuthService:
         if not valid:
             raise credentials_error
 
-       
         # create access token (JWT)
-        access_token = create_access_token(sub=str(user.id), role=list(
-            [user.role]))
+        access_token = create_access_token(sub=str(user.id), role=list([user.role]))
 
         # create refresh token (opaque raw string)
         token_service = TokenService(self._tokens, self._hasher)
-        refresh_token_raw, expires_at = await token_service._issue_refresh_token(user.id)
+        refresh_token_raw, expires_at = await token_service._issue_refresh_token(
+            user.id
+        )
 
-        return TokenDTO(access_token=access_token, refresh_token_raw=refresh_token_raw, expires_at=expires_at)
+        return TokenDTO(
+            access_token=access_token,
+            refresh_token_raw=refresh_token_raw,
+            expires_at=expires_at,
+        )
 
     async def logout(self, user_id: int):
         """

@@ -1,6 +1,7 @@
-
-from ....domain.abstracts.refresh_token_abstract import IOpaqueRefreshToken 
-from ....repositories.postgreSQL.refresh_token_repo import PostgresRefreshTokenRepository
+from ....domain.abstracts.refresh_token_abstract import IOpaqueRefreshToken
+from ....repositories.postgreSQL.refresh_token_repo import (
+    PostgresRefreshTokenRepository,
+)
 from ....core.db import AsyncSessionLocal
 
 

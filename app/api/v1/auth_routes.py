@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Request, Response
 from ...schema.auth_dto import LoginDTO, loginResponseDTO
@@ -9,33 +8,38 @@ from ...domain.auth.auth_service import AuthService
 from ...domain.auth.token_service import TokenService
 from ...core.token import get_current_user_id
 from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
+
 # get user repo and hasher dependencies
 from ..v1.dependencies.get_user_repo import get_user_repo, get_hasher
+
 router = APIRouter()
 
 
+## API endpoints
+# Login endpoint
 @router.post("/auth/login", response_model=loginResponseDTO)
-async def login(payload: LoginDTO,
-                response: Response,
-                user_repo: IUserRepository = Depends(get_user_repo),
-                hasher: PasswordHasher = Depends(get_hasher),
-                refresh_tokens: IOpaqueRefreshToken = Depends(
-                    get_refresh_tokens_repo)
-                ):
+async def login(
+    payload: LoginDTO,
+    response: Response,
+    user_repo: IUserRepository = Depends(get_user_repo),
+    hasher: PasswordHasher = Depends(get_hasher),
+    refresh_tokens: IOpaqueRefreshToken = Depends(get_refresh_tokens_repo),
+):
     svc = AuthService(user_repo, hasher, refresh_tokens)
     try:
-        token = await svc.login(payload)
+        token = await svc.login()
         access_token = token.access_token
         refresh_token_raw = token.refresh_token_raw
         # Set http-only cookie for refresh token
         response.set_cookie(
+            payload,
             key="refresh_token",
             value=refresh_token_raw,
             httponly=True,
-            secure=False,              # set to True in production with HTTPS
-            samesite="none",          # required for cross-site apps
+            secure=False,  # set to True in production with HTTPS
+            samesite="none",  # required for cross-site apps
             max_age=60 * 60 * 24 * 7,  # 7 days
-            path="/auth/refresh"   # cookie only sent to refresh endpoint
+            path="/auth/refresh",  # cookie only sent to refresh endpoint
         )
 
         return {"access_token": access_token}
@@ -46,16 +50,18 @@ async def login(payload: LoginDTO,
         raise HTTPException(status_code=500, detail="Internal error") from exc
 
 
+# Refresh endpoint
 @router.post("/auth/refresh")
 async def refresh(
     request: Request,
     response: Response,
-        hasher=Depends(get_hasher), refresh_tokens=Depends(get_refresh_tokens_repo)):
+    hasher=Depends(get_hasher),
+    refresh_tokens=Depends(get_refresh_tokens_repo),
+):
 
     raw_token = request.cookies.get("refresh_token")
     if not raw_token:
-        raise HTTPException(
-            status_code=400, detail="refresh_token required")
+        raise HTTPException(status_code=400, detail="refresh_token required")
     svc = TokenService(refresh_tokens, hasher)
     try:
         tokens = await svc.refresh_access_token(raw_token)
@@ -71,7 +77,7 @@ async def refresh(
             secure=False,  # set to True in production with HTTPS
             samesite="none",
             max_age=60 * 60 * 24 * 7,
-            path="/auth/refresh"
+            path="/auth/refresh",
         )
 
         return {"access_token": new_access, "expires_at": expires_at}
@@ -80,11 +86,15 @@ async def refresh(
         raise HTTPException(status_code=401, detail=str(e))
 
 
+# Logout endpoint
 @router.post("/auth/logout")
 async def logout(
-        response: Response,
-        user_id: int = Depends(get_current_user_id),
-        refresh_tokens=Depends(get_refresh_tokens_repo), hasher=Depends(get_hasher), user_repo: IUserRepository = Depends(get_user_repo)):
+    response: Response,
+    user_id: int = Depends(get_current_user_id),
+    refresh_tokens=Depends(get_refresh_tokens_repo),
+    hasher=Depends(get_hasher),
+    user_repo: IUserRepository = Depends(get_user_repo),
+):
 
     svc = AuthService(user_repo, hasher, refresh_tokens)
     try:

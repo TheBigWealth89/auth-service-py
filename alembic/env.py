@@ -14,7 +14,7 @@ from alembic import context
 config = context.config
 
 # --- Make project importable (so absolute imports like "app.core.db" work) ---
-here = os.path.abspath(os.path.dirname(__file__))      # alembic/
+here = os.path.abspath(os.path.dirname(__file__))  # alembic/
 project_root = os.path.abspath(os.path.join(here, ".."))  # project root
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
@@ -26,6 +26,7 @@ if config.config_file_name is not None:
 # --- Load .env so Alembic sees same env vars as your app (optional but helpful) ---
 try:
     from dotenv import load_dotenv
+
     load_dotenv(os.path.join(project_root, ".env"))
 except Exception:
     pass
@@ -46,7 +47,9 @@ if not url_candidate or url_candidate.strip().startswith("driver://"):
 try:
     make_url(url_candidate)
 except Exception as exc:
-    raise RuntimeError(f"Could not parse DATABASE_URL: {exc}\nValue was: {repr(url_candidate)}") from exc
+    raise RuntimeError(
+        f"Could not parse DATABASE_URL: {exc}\nValue was: {repr(url_candidate)}"
+    ) from exc
 
 # --- Import Base and ensure your model modules are imported so they register with Base.metadata ---
 try:
@@ -62,10 +65,11 @@ except Exception as exc:
 # Force import of model modules so metadata is populated.
 # Replace these with modules where your models live.
 try:
-    import app.models.user_model   # <-- adjust this to your models module(s)
+    import app.models.user_model  # <-- adjust this to your models module(s)
     import app.models.refresh_token_model
     import app.models.email_verification_model
     import app.models.password_reset_tokens
+
     # import app.models.other_model  # add more if you have additional model files
 except Exception:
     # If imports fail, let it surface below when we inspect metadata
@@ -75,6 +79,7 @@ except Exception:
 print("DEBUG: tables known to metadata:", list(Base.metadata.tables.keys()))
 
 target_metadata = Base.metadata
+
 
 # --- migration runner functions (async-enabled) ---
 def run_migrations_offline() -> None:

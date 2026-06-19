@@ -30,7 +30,7 @@ class PostgresUserRepository(IUserRepository):
             user = User(
                 name=user_create.name,
                 email=user_create.email,
-                hashed_password=password_hash
+                hashed_password=password_hash,
             )
             session.add(user)
             try:
@@ -63,7 +63,7 @@ class PostgresUserRepository(IUserRepository):
                 name=name,
                 email=email,
                 google_id=google_id,
-                is_verified=True  # OAuth users are considered verified
+                is_verified=True,  # OAuth users are considered verified
             )
             session.add(user)
             try:
@@ -82,7 +82,7 @@ class PostgresUserRepository(IUserRepository):
 
             user = result.scalar_one_or_none()
             if not user:
-                return None   # or raise exception
+                return None  # or raise exception
 
             # Update the password
             user.hashed_password = hashed_password

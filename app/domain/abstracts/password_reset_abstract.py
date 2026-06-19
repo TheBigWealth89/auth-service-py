@@ -6,7 +6,9 @@ from ...models.password_reset_tokens import PasswordResetToken
 
 class IPasswordResetToken(ABC):
     @abstractmethod
-    async def create_token(self, token_id: str, user_id: int, token: str, expires_at: datetime) -> PasswordResetToken:
+    async def create_token(
+        self, token_id: str, user_id: int, token: str, expires_at: datetime
+    ) -> PasswordResetToken:
         """Create or update a password reset and return the stored row."""
         raise NotImplementedError
 

@@ -10,13 +10,18 @@ from ..abstracts.password_hasher_abstract import PasswordHasher
 from ...schema.user_dto import NewPasswordDTO
 from ...core.mailer import ResendMailer
 
-
 # rate limit 60 secs
 RATE_LIMIT_SECONDS = 60
 
 
 class PasswordResetService:
-    def __init__(self, password_reset_repo: IPasswordResetToken, user_repo: IUserRepository, mailer: ResendMailer, hasher: PasswordHasher):
+    def __init__(
+        self,
+        password_reset_repo: IPasswordResetToken,
+        user_repo: IUserRepository,
+        mailer: ResendMailer,
+        hasher: PasswordHasher,
+    ):
         self._password_reset = password_reset_repo
         self._user_repo = user_repo
         self._mailer = mailer
@@ -37,11 +42,10 @@ class PasswordResetService:
         # check rate  limit
         now = datetime.now(timezone.utc)
         if last and (now - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
-            seconds_left = RATE_LIMIT_SECONDS - \
-                (now - last).total_seconds()
+            seconds_left = RATE_LIMIT_SECONDS - (now - last).total_seconds()
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Please wait {math.ceil(seconds_left)}s before another requesting another email."
+                detail=f"Please wait {math.ceil(seconds_left)}s before another requesting another email.",
             )
 
         expires_at = now + timedelta(minutes=10)
@@ -54,21 +58,17 @@ class PasswordResetService:
         token_hash = await self._hasher.hash(secret)
 
         await self._password_reset.create_token(
-            token_id=token_id,
-            user_id=user.id,
-            token=token_hash,
-            expires_at=expires_at
+            token_id=token_id, user_id=user.id, token=token_hash, expires_at=expires_at
         )
 
         # send raw token to user's email
         await self._mailer.send_reset_password_email(user.email, raw_token)
 
-
         # update timestamp
         await self._password_reset.update_last_email_sent_at(user.id, now)
 
     async def verify_token(self, raw_token: str):
-        """ Verify the token and return the associated user_id if valid."""
+        """Verify the token and return the associated user_id if valid."""
         try:
             token_id, secret = raw_token.split(".", 1)
         except ValueError:
@@ -84,8 +84,8 @@ class PasswordResetService:
 
         if not await self._hasher.verify(record.hashed_token, secret):
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-               detail= "Invalid token")
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
 
         await self._password_reset.delete_token(token_id)
 

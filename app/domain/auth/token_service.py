@@ -10,21 +10,28 @@ now = datetime.now(timezone.utc)
 
 
 class TokenService:
-    def __init__(self, refresh_token_repo: PostgresRefreshTokenRepository, hasher: PasswordHasher):
+    def __init__(
+        self, refresh_token_repo: PostgresRefreshTokenRepository, hasher: PasswordHasher
+    ):
         self._tokens = refresh_token_repo
         self._hasher = hasher
 
     async def _issue_refresh_token(self, user_id: int):
-        token_id = uuid.uuid4().hex                   # stable id we can look up
+        token_id = uuid.uuid4().hex  # stable id we can look up
         # raw secret to give client
         secret = secrets.token_urlsafe(64)
-        raw_token = f"{token_id}.{secret}"            # raw token format
+        raw_token = f"{token_id}.{secret}"  # raw token format
 
         # hash secret for storage (use your Argon2 hasher)
         token_hash = await self._hasher.hash(secret)
 
         expires_at = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-        await self._tokens.save_refresh_token(token_id=token_id, user_id=user_id, token_hash=token_hash, expires_at=expires_at)
+        await self._tokens.save_refresh_token(
+            token_id=token_id,
+            user_id=user_id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
 
         return raw_token, expires_at
 
@@ -39,7 +46,7 @@ class TokenService:
             raise ValueError("Invalid token format")
 
         rt = await self._tokens.get_refresh_token_by_id(token_id)
-        
+
         # Attempt to use a non-existent token
         if rt is None:
             await self._tokens.revoke_all_refresh_tokens_for_user(user_id=None)
@@ -75,4 +82,8 @@ class TokenService:
         # create new access token (JWT) for user.id (keep access token code)
         access_jwt = create_access_token(sub=str(rt.user_id))
 
-        return {"access_token": access_jwt, "refresh_token": new_raw, "expires_at": new_expires}
+        return {
+            "access_token": access_jwt,
+            "refresh_token": new_raw,
+            "expires_at": new_expires,
+        }

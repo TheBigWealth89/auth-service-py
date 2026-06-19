@@ -12,7 +12,12 @@ RATE_LIMIT_SECONDS = 60
 
 
 class EmailVerificationService:
-    def __init__(self, verification_repo: IEmailRepository, mailer: ResendMailer, hasher: PasswordHasher):
+    def __init__(
+        self,
+        verification_repo: IEmailRepository,
+        mailer: ResendMailer,
+        hasher: PasswordHasher,
+    ):
         self._verification = verification_repo
         self._email = mailer
         self._hasher = hasher
@@ -28,23 +33,23 @@ class EmailVerificationService:
 
         token_hash = await self._hasher.hash(secret)
 
-        # Get the last timestamp email sent 
+        # Get the last timestamp email sent
         last = await self._verification.get_last_email_sent_at(user.id)
 
         # check rate limit
-        if last and (datetime.now(timezone.utc) - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
-            seconds_left = RATE_LIMIT_SECONDS - \
-                (datetime.now(timezone.utc) - last).total_seconds()
+        if last and (datetime.now(timezone.utc) - last) < timedelta(
+            seconds=RATE_LIMIT_SECONDS
+        ):
+            seconds_left = (
+                RATE_LIMIT_SECONDS - (datetime.now(timezone.utc) - last).total_seconds()
+            )
             raise ValueError(
                 f"Please wait {math.ceil(seconds_left)}s before another requesting another email."
             )
 
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
         await self._verification.create_token(
-            token_id=token_id,
-            user_id=user.id,
-            token=token_hash,
-            expires_at=expires_at
+            token_id=token_id, user_id=user.id, token=token_hash, expires_at=expires_at
         )
 
         # send raw_token to user's email
@@ -54,7 +59,7 @@ class EmailVerificationService:
         await self._verification.update_last_email_sent_at(user.id, now)
 
     async def verify_token(self, raw_token: str):
-        """ Verify the token and return the associated user_id if valid."""
+        """Verify the token and return the associated user_id if valid."""
         try:
             token_id, secret = raw_token.split(".", 1)
         except ValueError:

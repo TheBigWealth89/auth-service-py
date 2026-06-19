@@ -6,7 +6,9 @@ from ...models.email_verification_model import EmailVerificationToken
 
 class IEmailRepository(ABC):
     @abstractmethod
-    async def create_token(self, token_id: str, user_id: int, token: str, expires_at: datetime) -> EmailVerificationToken:
+    async def create_token(
+        self, token_id: str, user_id: int, token: str, expires_at: datetime
+    ) -> EmailVerificationToken:
         """Create or update a verification and return the stored row."""
         raise NotImplementedError
 

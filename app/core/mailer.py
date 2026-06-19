@@ -11,11 +11,12 @@ class ResendMailer:
 
         link = f"http://localhost:8000/auth/verify-email?token={token}"
 
-        resend.Emails.send({
-            "from": "Auth-Service <onboarding@resend.dev>",
-            "to": email,
-            "subject": "Verify Your Email",
-            "html": f"""
+        resend.Emails.send(
+            {
+                "from": "Auth-Service <onboarding@resend.dev>",
+                "to": email,
+                "subject": "Verify Your Email",
+                "html": f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
         <h2>Welcome to Auth-Service 🎉</h2>
         <p>Thanks for creating an account! Before you can start using it, we just need to confirm your email address.</p>
@@ -47,18 +48,20 @@ class ResendMailer:
             If you didn’t request this, you can safely ignore the email.
         </p>
     </div>
-"""
-        })
+""",
+            }
+        )
 
     async def send_reset_password_email(self, email: str, token: str):
 
         link = f"http://localhost:8000/auth/reset-password/confirm?token={token}"
 
-        resend.Emails.send({
-            "from": "Auth-Service <onboarding@resend.dev>",
-            "to": email,
-            "subject": "Reset password Email",
-            "html": f"""
+        resend.Emails.send(
+            {
+                "from": "Auth-Service <onboarding@resend.dev>",
+                "to": email,
+                "subject": "Reset password Email",
+                "html": f"""
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
         <h2>Reset your password</h2>
         
@@ -89,5 +92,6 @@ class ResendMailer:
             If you didn’t request this, you can safely ignore the email.
         </p>
     </div>
-"""
-        })
+""",
+            }
+        )

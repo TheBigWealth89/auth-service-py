@@ -6,12 +6,20 @@ from ..users.email_verification_service import EmailVerificationService
 
 
 class UserService:
-    def __init__(self, user_repo: IUserRepository, hasher: PasswordHasher, email_service: EmailVerificationService):
+    def __init__(
+        self,
+        user_repo: IUserRepository,
+        hasher: PasswordHasher,
+        email_service: EmailVerificationService,
+    ):
         self._users = user_repo
         self._hasher = hasher
         self._email_service = email_service
 
-    async def register(self, dto: UserCreateDTO,) -> UserReadDTO:
+    async def register(
+        self,
+        dto: UserCreateDTO,
+    ) -> UserReadDTO:
         #  normalize
         email = dto.email.strip().lower()
 
@@ -24,7 +32,9 @@ class UserService:
             if not existing.is_verified:
                 # Resend verification email
                 await self._email_service.create_and_send_token(existing)
-                return {"message": "Email already registered but not verified. Verification email resent."}
+                return {
+                    "message": "Email already registered but not verified. Verification email resent."
+                }
 
         # check if user exist and verified
         if existing:

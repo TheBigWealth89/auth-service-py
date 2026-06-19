@@ -7,10 +7,16 @@ class PostgresRefreshTokenRepository:
     def __init__(self, async_session_factory):
         self._session_factory = async_session_factory
 
-    async def save_refresh_token(self, token_id: str, user_id: int, token_hash: str, expires_at: datetime):
+    async def save_refresh_token(
+        self, token_id: str, user_id: int, token_hash: str, expires_at: datetime
+    ):
         async with self._session_factory() as session:
-            rt = RefreshToken(id=token_id, user_id=user_id,
-                              token_hash=token_hash, expires_at=expires_at)
+            rt = RefreshToken(
+                id=token_id,
+                user_id=user_id,
+                token_hash=token_hash,
+                expires_at=expires_at,
+            )
             session.add(rt)
             await session.commit()
             await session.refresh(rt)
@@ -30,8 +36,7 @@ class PostgresRefreshTokenRepository:
     async def revoke_all_refresh_tokens_for_user(self, user_id: int):
         async with self._session_factory() as session:
             stmt = select(RefreshToken).where(
-                RefreshToken.user_id == user_id,
-                RefreshToken.revoked == False
+                RefreshToken.user_id == user_id, RefreshToken.revoked == False
             )
             result = await session.execute(stmt)
             tokens = result.scalars().all()

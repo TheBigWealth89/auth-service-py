@@ -14,5 +14,6 @@ def get_user_repo() -> IUserRepository:
 def get_hasher() -> PasswordHasher:
     return Argon2PasswordHasher()
 
+
 def get_pw_reset_repo() -> IPasswordResetToken:
     return PasswordResetTokenRepo(AsyncSessionLocal)

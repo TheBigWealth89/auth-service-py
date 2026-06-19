@@ -8,13 +8,14 @@ class PasswordResetTokenRepo(IPasswordResetToken):
     def __init__(self, async_session_factory):
         self._async_session_factory = async_session_factory
 
-    async def create_token(self, token_id: str, user_id: int, token: str, expires_at: datetime):
+    async def create_token(
+        self, token_id: str, user_id: int, token: str, expires_at: datetime
+    ):
         async with self._async_session_factory() as session:
 
             # Fetch row
             result = await session.execute(
-                select(PasswordResetToken)
-                .where(PasswordResetToken.user_id == user_id)
+                select(PasswordResetToken).where(PasswordResetToken.user_id == user_id)
             )
 
             existing = result.scalar_one_or_none()
@@ -35,7 +36,7 @@ class PasswordResetTokenRepo(IPasswordResetToken):
                     user_id=user_id,
                     hashed_token=token,
                     expires_at=expires_at,
-                    last_email_sent_at=datetime.now(tz=timezone.utc)
+                    last_email_sent_at=datetime.now(tz=timezone.utc),
                 )
                 session.add(token_row)
 
@@ -56,8 +57,9 @@ class PasswordResetTokenRepo(IPasswordResetToken):
     async def get_last_email_sent_at(self, user_id: int):
         async with self._async_session_factory() as session:
             result = await session.execute(
-                select(PasswordResetToken.last_email_sent_at).
-                where(PasswordResetToken.user_id == user_id)
+                select(PasswordResetToken.last_email_sent_at).where(
+                    PasswordResetToken.user_id == user_id
+                )
             )
 
             return result.scalar()
@@ -66,9 +68,7 @@ class PasswordResetTokenRepo(IPasswordResetToken):
         async with self._async_session_factory() as session:
 
             result = await session.execute(
-                select(PasswordResetToken).where(
-                    PasswordResetToken.user_id == user_id
-                )
+                select(PasswordResetToken).where(PasswordResetToken.user_id == user_id)
             )
 
             record = result.scalar_one_or_none()
@@ -76,10 +76,7 @@ class PasswordResetTokenRepo(IPasswordResetToken):
         if record:
             record.last_email_sent_at = timestamp
         else:
-            record = PasswordResetToken(
-                user_id=user_id,
-                last_email_sent_at=timestamp
-            )
+            record = PasswordResetToken(user_id=user_id, last_email_sent_at=timestamp)
             session.add(record)
 
         await session.commit()
@@ -88,8 +85,7 @@ class PasswordResetTokenRepo(IPasswordResetToken):
     async def delete_token(self, token_id: str):
         async with self._async_session_factory() as session:
             result = await session.execute(
-                select(PasswordResetToken).where(
-                    PasswordResetToken.id == token_id)
+                select(PasswordResetToken).where(PasswordResetToken.id == token_id)
             )
             email_token = result.scalars().first()
         try:

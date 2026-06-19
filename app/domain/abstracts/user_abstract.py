@@ -23,6 +23,7 @@ class IUserRepository(ABC):
     @abstractmethod
     async def mark_verified(self, user_id: int) -> Optional[User]:
         """Mark a user verified and return the verified User."""
+
     @abstractmethod
     async def create_google_user(self, email: str, google_id: str, name: str) -> User:
         """Create a user with Google and return created User"""
