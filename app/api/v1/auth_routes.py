@@ -27,7 +27,7 @@ async def login(
 ):
     svc = AuthService(user_repo, hasher, refresh_tokens)
     try:
-        token = await svc.login()
+        token = await svc.login(payload)
         access_token = token.access_token
         refresh_token_raw = token.refresh_token_raw
         # Set http-only cookie for refresh token
