@@ -32,7 +32,6 @@ async def login(
         refresh_token_raw = token.refresh_token_raw
         # Set http-only cookie for refresh token
         response.set_cookie(
-            payload,
             key="refresh_token",
             value=refresh_token_raw,
             httponly=True,
