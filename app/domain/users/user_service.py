@@ -26,7 +26,7 @@ class UserService:
         if len(dto.password) < 8:
             raise ValueError("Password must be at least 8 characters long")
 
-        # check if user exist but not verified, if user not verified, resend verification email
+        # check if user exists
         existing = await self._users.get_user_by_email(email)
         if existing:
             if not existing.is_verified:
@@ -35,10 +35,9 @@ class UserService:
                 return {
                     "message": "Email already registered but not verified. Verification email resent."
                 }
-
-        # check if user exist and verified
-        if existing:
-            raise ValueError("Email is already registered")
+            else:
+                # User exists and is verified
+                raise ValueError("Email is already registered")
 
         # hash password (expensive done in threadpool inside hasher)
         hashed = await self._hasher.hash(dto.password)

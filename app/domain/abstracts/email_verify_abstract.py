@@ -19,7 +19,7 @@ class IEmailRepository(ABC):
 
     @abstractmethod
     async def get_last_email_sent_at(self, user_id: int) -> Optional[datetime]:
-        """Return timestamp of last email sent or None if user has no token"""
+        """Return timestamp of last email sent or None if user has no token"""  
         raise NotImplementedError
 
     @abstractmethod
