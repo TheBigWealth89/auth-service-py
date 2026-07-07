@@ -11,6 +11,8 @@ from ..v1.dependencies.get_refresh_token_repo import get_refresh_tokens_repo
 
 # get user repo and hasher dependencies
 from ..v1.dependencies.get_user_repo import get_user_repo, get_hasher
+from ..v1.dependencies.get_rate_limiter import enforce_login_rate_limit
+from ...domain.auth.rate_limit_service import RateLimitService
 
 router = APIRouter()
 
@@ -20,7 +22,9 @@ router = APIRouter()
 @router.post("/auth/login", response_model=loginResponseDTO)
 async def login(
     payload: LoginDTO,
+    request: Request,
     response: Response,
+    rate_limiter: RateLimitService = Depends(enforce_login_rate_limit),
     user_repo: IUserRepository = Depends(get_user_repo),
     hasher: PasswordHasher = Depends(get_hasher),
     refresh_tokens: IOpaqueRefreshToken = Depends(get_refresh_tokens_repo),
@@ -28,6 +32,9 @@ async def login(
     svc = AuthService(user_repo, hasher, refresh_tokens)
     try:
         token = await svc.login(payload)
+        
+        # Clear rate limit upon successful login
+        await rate_limiter.clear_limit(request.client.host, payload.email.strip().lower())
         access_token = token.access_token
         refresh_token_raw = token.refresh_token_raw
         # Set http-only cookie for refresh token

@@ -17,3 +17,6 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
 # Google OAuth client ID
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+# Redis configuration
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
