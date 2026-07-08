@@ -190,16 +190,16 @@ The application defines strict abstract contracts ensuring dependency inversion.
 
 ## 7. PostgreSQL Repositories (Data Access Layer)
 
-All repositories are initialized with an `async_session_factory`. They manage the creation and committing of SQLAlchemy sessions.
+All repositories are initialized with an `async_session_factory`. They use `session.begin()` for all database operations, which automatically commits on success and rolls back on any exception — eliminating manual `try/except/rollback` boilerplate and preventing connection leaks.
 
 ### `PostgresUserRepository`
-Implements `IUserRepository`. Utilizes `IntegrityError` to safely trap duplicate user inserts and rollback correctly. Contains `update_password` logic.
+Implements `IUserRepository`. All write methods use `session.begin()`. `IntegrityError` (e.g. duplicate email) bubbles up naturally from within the transaction block and is handled by the domain layer. `session.refresh()` is called after the `begin()` block closes to reload DB-generated fields (IDs, timestamps) from the committed state.
 ### `PostgresRefreshTokenRepository`
-Implements `IOpaqueRefreshToken`. Uses `save`, `get`, and sets the `revoked` flag to true when revoking. Revoking all fetches active tokens and bulk updates them.
+Implements `IOpaqueRefreshToken`. Uses `session.begin()` for all saves and revocations. `revoke_all_refresh_tokens_for_user` fetches all active tokens and bulk-marks them within a single atomic transaction.
 ### `EmailVerifyTokensRepo`
-Implements `IEmailRepository`. Has a unique upsert-style `create_token` where it either creates a new `EmailVerificationToken` or modifies the existing one to update `token_id`, `hashed_token`, and `expires_at`.
+Implements `IEmailRepository`. Has an upsert-style `create_token` that either updates an existing `EmailVerificationToken` row or creates a new one, entirely within a single `session.begin()` block.
 ### `PasswordResetTokenRepo`
-Implements `IPasswordResetToken`. Functions identically to `EmailVerifyTokensRepo` but for password resets.
+Implements `IPasswordResetToken`. Identical pattern to `EmailVerifyTokensRepo` but for `PasswordResetToken` entities.
 
 ---
 
@@ -220,7 +220,7 @@ Implements `IPasswordResetToken`. Functions identically to `EmailVerifyTokensRep
     *   If fully valid, it immediately revokes the current token (Rotation), issues a new refresh token, and issues a new access token.
 
 ### `UserService` (`app/domain/users/user_service.py`)
-*   `register(dto: UserCreateDTO)`: Checks if a user already exists. If they exist but are not verified, it resends the verification email. If they exist and are verified, throws an error. Hashes the incoming password. Creates the user in DB and dispatches the verification email.
+*   `register(dto: UserCreateDTO)`: Uses a single `if/elif/else` decision tree to check for existing users. If the user exists and is **not** verified, it resends the verification email. If the user exists and **is** verified, it raises an error. Otherwise, it hashes the password, creates the user in the DB, and dispatches a verification email.
 
 ### `EmailVerificationService` (`app/domain/users/email_verification_service.py`)
 *   `create_and_send_token(user)`: Enforces a 60-second rate limit using the `last_email_sent_at` column. Generates `token_id` and `secret`, hashes it, stores it with a 10-minute expiry, and triggers the Resend API.
@@ -260,6 +260,7 @@ The FastAPI route definitions rely on `Depends()` to inject concrete implementat
 *   `get_refresh_tokens_repo()` -> `PostgresRefreshTokenRepository`
 *   `get_verification_repo()` -> `EmailVerifyTokensRepo`
 *   `get_mailer()` -> `ResendMailer`
+*   `enforce_login_rate_limit()` -> `RateLimitService` (Redis-backed, runs before login handler)
 *(All repositories are initialized using the `AsyncSessionLocal` sessionmaker.)*
 
 ---
@@ -287,53 +288,52 @@ Establishes the SQLAlchemy `create_async_engine` and `sessionmaker` (`AsyncSessi
 
 ## 12. Database Queries & SQLAlchemy 2.0 Patterns
 
-This project relies entirely on **SQLAlchemy 2.0** in **Async** mode (via `asyncpg`). It avoids legacy `session.query()` syntax in favor of the modern `select()` construct. 
+This project relies entirely on **SQLAlchemy 2.0** in **Async** mode (via `asyncpg`). It avoids legacy `session.query()` syntax in favor of the modern `select()` construct.
 
-### 12.1. Async Session Management
-All repository methods manage their own local asynchronous sessions using the injected `async_session_factory` (which points to `AsyncSessionLocal`). This ensures thread/task safety across FastAPI requests:
+### 12.1. Async Session Management with `session.begin()`
+All repository methods use a nested `session.begin()` context manager. This pattern automatically commits the transaction on clean exit and rolls back on any exception, eliminating manual `try/except/rollback` boilerplate and preventing connection leaks:
 ```python
 async with self._session_factory() as session:
-    # Perform database operations
-    await session.commit()
+    async with session.begin():
+        # ALL reads and writes happen here.
+        # No manual commit() or rollback() ever needed.
 ```
+`session.refresh(obj)` is called *after* the `begin()` block closes when DB-generated fields (e.g., auto-assigned IDs or server-default timestamps) need to be reloaded from the committed state.
 
 ### 12.2. Selecting Data (`select()`)
 Queries are built using the `select()` statement and executed via `session.execute()`:
 ```python
 stmt = select(User).where(User.email == email)
 result = await session.execute(stmt)
-user = result.scalars().first() # returns the User ORM object or None
+user = result.scalars().first()  # returns the User ORM object or None
 ```
 *   `result.scalars().first()`: Used when we expect zero or one result.
-*   `result.scalar_one_or_none()`: Also used for unique fetches where multiple results would indicate a critical data integrity error.
-*   `result.scalars().all()`: Used when fetching a list of records (e.g., getting all active refresh tokens for a user).
+*   `result.scalar_one_or_none()`: Used for unique fetches where multiple results indicate a data integrity error.
+*   `result.scalars().all()`: Used when fetching a list (e.g., all active refresh tokens for a user).
 
 ### 12.3. Direct Entity Lookups
-For primary key lookups, the session provides a highly optimized `session.get()` method which natively handles async identity mapping:
+For primary key lookups, `session.get()` is preferred as SQLAlchemy can serve it from the identity map without a round-trip to the database:
 ```python
-# Fetches by Primary Key
 return await session.get(RefreshToken, token_id)
 ```
 
-### 12.4. Inserts and Exception Handling
-When creating new records, objects are added to the session and `session.commit()` is awaited. `IntegrityError` is explicitly caught to safely handle unique constraint violations (e.g., duplicate emails):
+### 12.4. Inserts
+Objects are added to the session inside the `begin()` block. Any `IntegrityError` (e.g., a duplicate email) bubbles up naturally, triggering an automatic rollback:
 ```python
-session.add(new_user)
-try:
-    await session.commit()
-except IntegrityError:
-    await session.rollback()
-    raise # Surfaces error back to the domain layer
-await session.refresh(new_user) # Populates DB-assigned fields like IDs or default timestamps
+async with session.begin():
+    session.add(new_user)
+# Refresh after the transaction closes to get DB-assigned fields
+await session.refresh(new_user)
 ```
 
 ### 12.5. Updates
-Updates are typically performed by fetching the ORM object, modifying its attributes, and committing the session. Because `autoflush=False` and `expire_on_commit=False` are configured on the engine, the attributes remain accessible after the transaction commits without triggering implicit IO blocks:
+Updates are performed by fetching the ORM object and mutating its attributes inside the `begin()` block. SQLAlchemy tracks the change and flushes it automatically on commit:
 ```python
-rt = await session.get(RefreshToken, token_id)
-if rt:
-    rt.revoked = True
-    await session.commit()
+async with session.begin():
+    rt = await session.get(RefreshToken, token_id)
+    if rt:
+        rt.revoked = True
+# Transaction auto-commits here
 ```
 
 ---

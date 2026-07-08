@@ -11,37 +11,36 @@ class PostgresRefreshTokenRepository:
         self, token_id: str, user_id: int, token_hash: str, expires_at: datetime
     ):
         async with self._session_factory() as session:
-            rt = RefreshToken(
-                id=token_id,
-                user_id=user_id,
-                token_hash=token_hash,
-                expires_at=expires_at,
-            )
-            session.add(rt)
-            await session.commit()
+            async with session.begin():
+                rt = RefreshToken(
+                    id=token_id,
+                    user_id=user_id,
+                    token_hash=token_hash,
+                    expires_at=expires_at,
+                )
+                session.add(rt)
             await session.refresh(rt)
             return rt
 
     async def get_refresh_token_by_id(self, token_id: str):
         async with self._session_factory() as session:
-            return await session.get(RefreshToken, token_id)
+            async with session.begin():
+                return await session.get(RefreshToken, token_id)
 
     async def revoke_refresh_token(self, token_id: str):
         async with self._session_factory() as session:
-            rt = await session.get(RefreshToken, token_id)
-            if rt:
-                rt.revoked = True
-                await session.commit()
+            async with session.begin():
+                rt = await session.get(RefreshToken, token_id)
+                if rt:
+                    rt.revoked = True
 
     async def revoke_all_refresh_tokens_for_user(self, user_id: int):
         async with self._session_factory() as session:
-            stmt = select(RefreshToken).where(
-                RefreshToken.user_id == user_id, RefreshToken.revoked == False
-            )
-            result = await session.execute(stmt)
-            tokens = result.scalars().all()
-
-            for t in tokens:
-                t.revoked = True
-
-            await session.commit()
+            async with session.begin():
+                stmt = select(RefreshToken).where(
+                    RefreshToken.user_id == user_id, RefreshToken.revoked == False
+                )
+                result = await session.execute(stmt)
+                tokens = result.scalars().all()
+                for t in tokens:
+                    t.revoked = True
