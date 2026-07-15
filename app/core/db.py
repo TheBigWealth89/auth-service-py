@@ -9,7 +9,7 @@ from .config import DATABASE_URL
 # Create async engine connection pool + SQL compilations
 engine = create_async_engine(
     DATABASE_URL,
-    echo=True,  # Prints SQL to stdout for developing
+    echo=False,  # Set to False to stop duplicate/noisy SQL logging in terminal
     future=True,
 )
 

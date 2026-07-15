@@ -6,7 +6,6 @@ from ...domain.abstracts.password_hasher_abstract import PasswordHasher
 from ..abstracts.email_verify_abstract import IEmailRepository
 from ...core.mailer import ResendMailer
 
-now = datetime.now(timezone.utc)
 # Rate limit time 60 secs
 RATE_LIMIT_SECONDS = 60
 
@@ -35,19 +34,16 @@ class EmailVerificationService:
 
         # Get the last timestamp email sent
         last = await self._verification.get_last_email_sent_at(user.id)
+        current_time = datetime.now(timezone.utc)
 
         # check rate limit
-        if last and (datetime.now(timezone.utc) - last) < timedelta(
-            seconds=RATE_LIMIT_SECONDS
-        ):
-            seconds_left = (
-                RATE_LIMIT_SECONDS - (datetime.now(timezone.utc) - last).total_seconds()
-            )
+        if last and (current_time - last) < timedelta(seconds=RATE_LIMIT_SECONDS):
+            seconds_left = RATE_LIMIT_SECONDS - (current_time - last).total_seconds()
             raise ValueError(
-                f"Please wait {math.ceil(seconds_left)}s before another requesting another email."
+                f"Please wait {math.ceil(seconds_left)}s before requesting another email."
             )
 
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        expires_at = current_time + timedelta(minutes=10)
         await self._verification.create_token(
             token_id=token_id, user_id=user.id, token=token_hash, expires_at=expires_at
         )
@@ -56,7 +52,7 @@ class EmailVerificationService:
         await self._email.send_verification_email(user.email, raw_token)
 
         # update timestamp
-        await self._verification.update_last_email_sent_at(user.id, now)
+        await self._verification.update_last_email_sent_at(user.id, current_time)
 
     async def verify_token(self, raw_token: str):
         """Verify the token and return the associated user_id if valid."""
