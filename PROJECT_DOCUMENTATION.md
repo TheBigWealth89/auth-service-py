@@ -350,11 +350,34 @@ async with session.begin():
 
 ---
 
-## 14. Setup and Execution
+## 14. Observability & Logging
 
-1.  **Environment:** Ensure Python 3.10+ and a PostgreSQL server.
+The application utilizes `structlog` to provide structured, JSON-formatted logging for all production events. This ensures that logs are highly queryable by modern observability platforms (like Datadog, Loki, or Elasticsearch).
+
+### 14.1. Core Configuration
+Logging is globally configured in `app/core/logging.py`.
+1. **JSON Output:** All events are emitted as JSON dictionaries containing explicit metadata.
+2. **Uvicorn Silencing:** Uvicorn's default plain-text loggers (`uvicorn`, `uvicorn.access`, `uvicorn.error`) are explicitly silenced in Python, and `--no-access-log` is recommended for the CLI. This prevents duplicate logs and ensures 100% of the log output is structured JSON.
+3. **Stdlib Integration:** The pipeline uses `structlog.stdlib.LoggerFactory()`, meaning any third-party library utilizing Python's built-in `logging` module will automatically have its output captured and formatted as JSON.
+
+### 14.2. Request Context (`RequestIDMiddleware`)
+Every incoming HTTP request generates a unique UUID (`request_id`). The `RequestIDMiddleware` binds this UUID (along with the HTTP `method` and `path`) to the thread-local structlog context. 
+**Benefit:** Every log line emitted during the lifecycle of a request automatically carries the same `request_id`, allowing developers to instantly correlate all database queries, warnings, and business logic events associated with a single user action.
+
+### 14.3. Business Event Tracking
+Logs are strategically placed within the Domain Service layer (and omitted from the repository layer to prevent noise). Critical security events are logged with precise context:
+*   `login_failed_wrong_password` (Warning) — Includes `user_id` and `email`
+*   `token_reuse_detected` (Critical) — Includes `user_id` and `token_id`
+*   `suspicious_activity_unknown_token` (Critical) — Includes `token_id`
+*   `rate_limit_exceeded` (Warning) — Includes `ip`, `email`, and `attempt_count`
+
+---
+
+## 15. Setup and Execution
+
+1.  **Environment:** Ensure Python 3.10+, a PostgreSQL server, and a Redis server are running.
 2.  **Dependencies:** `pip install -r requirements.txt`
-3.  **Env file:** Copy `.env.example` to `.env` and provide a valid asyncpg `DATABASE_URL` (e.g., `postgresql+asyncpg://user:password@localhost/dbname`).
+3.  **Env file:** Copy `.env.example` to `.env` and provide a valid asyncpg `DATABASE_URL` and `REDIS_URL`.
 4.  **Database Migration:** Execute `alembic upgrade head` to generate tables.
-5.  **Execution:** Run `uvicorn app.main:app --reload`.
-6.  **Testing:** Execute `pytest -q` which automatically drops into the test environment via `app/test/test_db.py` and `test_refresh.py`.
+5.  **Execution:** Run `uvicorn app.main:app --reload --no-access-log` (disabling access logs prevents plain-text duplicates).
+6.  **Testing:** Execute `pytest -q` which automatically drops into the test environment.

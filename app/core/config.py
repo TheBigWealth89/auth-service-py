@@ -20,3 +20,6 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
 # Redis configuration
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# Logging
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
